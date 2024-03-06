@@ -1,0 +1,79 @@
+import { defineConfig } from '@umijs/max';  
+export default defineConfig({
+  antd: {},
+  access: {},
+  model: {},
+  initialState: {},
+  request: {},
+  layout: {}, 
+  locale: {
+    default: 'zh-TW',
+    baseSeparator: '-',
+  },
+  routes: [
+    {
+      path: '/',
+      redirect: '/sdgs',
+      layout: false, 
+    }, 
+    {
+      name: ' SDGs  ',
+      path: '/sdgs',
+      component: './SDGs',
+      layout: false, 
+    },  
+    {
+      name: ' SDGs SDGsBooks  ',
+      path: '/sdgs/sdgsbooks',
+      component: './SDGs/sdgsbooks',
+      layout: false, 
+    }, 
+    {
+      name: ' SDGs SDGsBooks EDIT  ',
+      path: '/sdgsbooks/edit',
+      component: './SDGsBooks/edit',
+      layout: false, 
+    },   
+    {
+      name: ' SDGs SDGsAction EDIT  ',
+      path: '/sdgsaction/edit',
+      component: './SDGsAction/edit',
+      layout: false, 
+    },   
+    {
+      name: ' SDGs SDGsTalk EDIT  ',
+      path: '/sdgstalk/edit',
+      component: './SDGsTalk/edit',
+      layout: false, 
+    }, 
+    {
+      name: ' SDGs SDGsItem  ',
+      path: '/sdgs/sdgsitem',
+      component: './SDGs/sdgsitem',
+      layout: false, 
+    },  
+    {
+      name: ' SDGs SDGsAction  ',
+      path: '/sdgs/sdgsaction',
+      component: './SDGs/sdgsaction',
+      layout: false, 
+    } ,  
+    {
+      name: ' SDGs SDGsKeywd ',
+      path: '/sdgs/sdgskeywd',
+      component: './SDGs/sdgskeywd',
+      layout: false, 
+    } ,  
+    {
+      name: ' SDGs SDGsItem  ',
+      path: '/sdgs/sdgstalk',
+      component: './SDGs/sdgstalk',
+      layout: false, 
+    }  
+    
+  ],
+  npmClient: 'npm',
+  base:'/HyLibMainDEV/hylibsdgs/',
+  publicPath:'/HyLibMainDEV/hylibsdgs/',
+});
+

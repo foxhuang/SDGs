@@ -1,0 +1,55 @@
+{
+  "total": 4,
+  "success": true,
+  "rows": [
+    {
+      "id": 3,
+      "DeviceID": "B01-1-1",
+      "DeviceName": "自助借書機01",
+      "DeviceType": 4,
+      "DeviceTypeName": "自助借書機",
+      "LibraryID": "1",
+      "LibraryName": " 圖書館",
+      "DeviceState": 1,
+      "DeviceMessage": "系統正常",
+      "DeviceUpdateTime": "2023-11-01 11:20"
+    },
+    {
+      "id": 2,
+      "DeviceID": "C01-1-1",
+      "DeviceName": "工作站01",
+      "DeviceType": 1,
+      "DeviceTypeName": "館員工作站",
+      "LibraryID": "1",
+      "LibraryName": " 圖書館",
+      "DeviceState": 1,
+      "DeviceMessage": "系統正常",
+      "DeviceUpdateTime": "2023-11-01 11:19"
+    },
+    {
+      "id": 4,
+      "DeviceID": "D01-01-1",
+      "DeviceName": "24小時還書機",
+      "DeviceType": 5,
+      "DeviceTypeName": "24小時還書機",
+      "LibraryID": "1",
+      "LibraryName": " 圖書館",
+      "DeviceState": 1,
+      "DeviceMessage": "系統正常",
+      "DeviceUpdateTime": "2023-11-01 11:20"
+    },
+    {
+      "id": 1,
+      "DeviceID": "K14-2-1",
+      "DeviceName": "偵測門01",
+      "DeviceType": 3,
+      "DeviceTypeName": "偵測門",
+      "LibraryID": "1",
+      "LibraryName": " 圖書館",
+      "DeviceState": 2,
+      "DeviceMessage": "系統異常",
+      "DeviceUpdateTime": "2023-07-07 13:08"
+    }
+  ],
+  "message": ""
+}
