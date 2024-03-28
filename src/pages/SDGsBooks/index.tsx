@@ -78,7 +78,7 @@ const SDGsBooks: React.FC<{}>  = () => {
       hideInSearch: true,
     }, 
     { 
-      title: '館內有書',
+      title: '本館有書',
       dataIndex: 'marcId', 
       valueEnum: { 
         0: {
@@ -92,7 +92,7 @@ const SDGsBooks: React.FC<{}>  = () => {
       hideInSearch: true,
     },   
     { 
-      title: '是否顯示',
+      title: '前台顯示',
       dataIndex: 'isshow', 
       valueEnum: { 
         0: {

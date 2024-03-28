@@ -33,7 +33,7 @@ export default defineConfig({
       path: '/sdgsbooks/edit',
       component: './SDGsBooks/edit',
       layout: false, 
-    },   
+    },       
     {
       name: ' SDGs SDGsAction EDIT  ',
       path: '/sdgsaction/edit',
@@ -46,6 +46,18 @@ export default defineConfig({
       component: './SDGsTalk/edit',
       layout: false, 
     }, 
+    {
+      name: ' SDGs SDGskeyword EDIT  ',
+      path: '/sdgskeyword/edit',
+      component: './SDGsKeyword/edit',
+      layout: false, 
+    },  
+    {
+      name: ' SDGs SDGskeyword Add  ',
+      path: '/sdgskeyword/add',
+      component: './SDGsKeyword/add',
+      layout: false, 
+    },  
     {
       name: ' SDGs SDGsItem  ',
       path: '/sdgs/sdgsitem',
@@ -69,11 +81,17 @@ export default defineConfig({
       path: '/sdgs/sdgstalk',
       component: './SDGs/sdgstalk',
       layout: false, 
+    }   ,  
+    {
+      name: ' SDGs fileupload  ',
+      path: '/sdgs/fileupload',
+      component: './SDGs/fileupload',
+      layout: false, 
     }  
     
   ],
   npmClient: 'npm',
-  base:'/HyLibMainDEV/hylibsdgs/',
-  publicPath:'/HyLibMainDEV/hylibsdgs/',
+  base:'/HyLibMain/hylibsdgs/',
+  publicPath:'/HyLibMain/hylibsdgs/',
 });
 

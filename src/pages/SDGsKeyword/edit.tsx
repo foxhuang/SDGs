@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { history } from "umi";
-import {  getSDGsItemById  ,addSDGsItem } from "../service"; 
+import {  getSDGsKeywordById  ,addSDGsKeyword } from "../service"; 
 import { PageContainer } from '@ant-design/pro-layout';
 import { Button, Divider, Form, Input,  message, Space,Radio } from "antd";
 import moment from "moment";
@@ -13,12 +13,12 @@ const formItemLayout = {
   labelCol: { span: 3 }
 };
 
-const AddForm: React.FC<{}> = (props: any) => {
+const EditForm: React.FC<{}> = (props: any) => {
     let querystring = window.location.search.replace('?', '');
     let params = querystring.split('&');
     let sdgsId = 0;
     let id = 0;
-    let maincodeId = 81001; 
+    let maincodeId = 1; 
     params.map(param => {
       var q = param.split('=');
       if (q[0] === 'sdgsId') {
@@ -35,7 +35,7 @@ const AddForm: React.FC<{}> = (props: any) => {
     useEffect(() => {
         const fetchData = async () => {
             if (id !== 0) {
-                let items = await getSDGsItemById(id);
+                let items = await getSDGsKeywordById(id);
                 console.info("item", items.data); 
                 console.info("muser", items.muser); 
 
@@ -77,18 +77,18 @@ const AddForm: React.FC<{}> = (props: any) => {
                 title: <a href="../sdgs/">SDGs 目標列表</a>, 
             },
             { 
-                title: <a href={"../sdgs/sdgsaction?sdgsId="+sdgsId+"&maincodeId="+maincodeId}>一起行動</a>, 
+                title: <a href={"../sdgs/sdgskeywd?sdgsId="+sdgsId}>關鍵字</a>, 
             },
             { 
-                title: "編輯行動", 
+                title: "編輯關鍵字", 
             },
         ],});
     }, []);
-    const title = "SDGs "+sdgsId+"  行動";
+    const title = "SDGs "+sdgsId+"  關鍵字";
 
     const onFinish = async (values: SDGsItems) => {
         console.info("onFinish", values);
-        if (await onSubmit(values)) history.push("/sdgs/sdgsaction?sdgsId="+sdgsId+"&maincodeId="+maincodeId);
+        if (await onSubmit(values)) history.push("/sdgs/sdgskeywd?sdgsId="+sdgsId);
     };
 
     const onSubmit = async (values: SDGsItems) => {
@@ -97,7 +97,7 @@ const AddForm: React.FC<{}> = (props: any) => {
         values.maincodeId = maincodeId;
         const hide = message.loading("正在配置");
         try {
-            const result = await addSDGsItem(values);
+            const result = await addSDGsKeyword(values);
             console.log(result);
             hide();
 
@@ -133,8 +133,8 @@ const AddForm: React.FC<{}> = (props: any) => {
             initialValues={initialValues}
             labelWrap
             >
-            <h2>一起行動</h2>
-            <Form.Item name="title" label="行動項目" rules={[{ required: true }]}>
+            <h2>關鍵字</h2>
+            <Form.Item name="title" label="項目" rules={[{ required: true }]}>
                 <Input /> 
             </Form.Item>
             <Form.Item name="isshow" label="前台顯示" rules={[{ required: true }]}>
@@ -163,7 +163,7 @@ const AddForm: React.FC<{}> = (props: any) => {
             )} 
             <Form.Item style={{ textAlign: "center" }}>
                 <Space>
-                <Button type="default" onClick={() => history.push("/sdgs/sdgsaction?sdgsId="+sdgsId+"&maincodeId="+maincodeId)}>
+                <Button type="default" onClick={() => history.push("/sdgs/sdgskeywd?sdgsId="+sdgsId)}>
                     回上一頁
                 </Button>
                 <Button type="primary" htmlType="submit">
@@ -179,4 +179,4 @@ const AddForm: React.FC<{}> = (props: any) => {
     );
 };
 
-export default AddForm;
+export default EditForm;

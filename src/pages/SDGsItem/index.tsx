@@ -65,7 +65,7 @@ const SDGsItem: React.FC<{}>  = () => {
     },   
     
     { 
-      title: '是否顯示',
+      title: '前台顯示',
       dataIndex: 'isshow', 
       valueEnum: { 
         0: {

@@ -4,12 +4,15 @@ import request from 'umi-request';
 import React, { useEffect, useRef, useState } from "react";
 import Tab from '../../components/SDGs/Tab'; 
 import {  getSDGs,delSDGsBooksById  } from "../service";
-import { Button,  Space, message } from "antd";
+import { Button,  Space, message,DatePicker } from "antd";
 import { history } from "umi";
 import { PlusOutlined } from "@ant-design/icons";
 import { SDGsBooksItem } from "./data";
+import { PageContainer } from '@ant-design/pro-layout';
+import { BookListForm,BookEditForm } from '../../components/SDGs'; 
  
 
+const { RangePicker } = DatePicker;
 const SDGsBooks: React.FC<{}>  = () => {
   let querystring = window.location.search.replace('?', '');
   let params = querystring.split('&');
@@ -21,22 +24,47 @@ const SDGsBooks: React.FC<{}>  = () => {
     } 
   }); 
     
-    const [breadcrumb, setData] = useState({});
+  const [breadcrumb, setData] = useState({}); 
+  const [SDGsData, setSDGsData]  = useState({}); 
+  const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
+    false
+  );
+  const [isbn, setISBN]  = useState(''); 
+  const [editModalVisible, handleEditModalVisible] = useState<boolean>(
+    false
+  );
 
-    useEffect(() => {
-        setData({ items: [
-            {
-              title: 'SDGs 目標管理',
-            },
-            { 
-                title: <a href="../sdgs/">SDGs 目標列表</a>, 
-            },
-            { 
-                title: "書單", 
-            },
-        ],});
-    }, []);
+  const [bookId, setBookId]  = useState(0); 
+  const [marcId, setMarcId]  = useState(0); 
 
+  useEffect(() => {
+    const fetchData = async () => {
+      let data = await getSDGs();
+      if (data !== undefined) setSDGsData(data);
+    };
+    fetchData();
+  }, []);
+  useEffect(() => {
+      setData({ items: [
+          {
+            title: 'SDGs 目標管理',
+          },
+          { 
+              title: <a href="../sdgs/">SDGs 目標列表</a>, 
+          },
+          { 
+              title: "書單", 
+          },
+      ],});
+  }, []);
+
+  const openBookList = (isbn: string) => {
+    console.log(isbn);
+    setISBN(isbn); 
+    handleDetailModalVisible(true);  
+  };
+
+  
   const actionRef = useRef<ActionType>(); 
   const columns: ProColumns<SDGsBooksItem>[] = [
     {
@@ -76,31 +104,72 @@ const SDGsBooks: React.FC<{}>  = () => {
       title: '資料來源',
       dataIndex: 'source', 
       ellipsis: true,  
-      hideInSearch: true,
+    
     },   
     {
       title: '新增時間',
-      key: 'showTime',
+      key: 'insertDate',
       dataIndex: 'insert_date',
       valueType: 'date', 
-      hideInSearch: true,
+      renderFormItem: () => <RangePicker format={"YYYY-MM-DD"}/>,
     }, 
     { 
-      title: '館內有書',
+      title: '本館有書',  
+      render: (_, record: any) => {
+        return (<> 
+          {(parseInt(record.marcId) !== 0 ) && (<> 
+            <a  href="javascript:;" 
+            onClick={() => {  
+              openBookList(record.isbn) 
+            }}>有</a> 
+          </>)}
+          {(parseInt(record.marcId) === 0 ) && (<>
+            無
+          </>)}
+        </>);
+      },
+      ellipsis: true,  
+      hideInSearch: true,
+    },
+    { 
+      title: '本館有書',
       dataIndex: 'marcId', 
-      valueEnum: { 
-        0: {
+      valueEnum: {  
+        '-1': {
+          text: '全部', 
+        },
+        '0': {
           text: '無', 
         },
-        1: {
+        '1': {
           text: '有',  
         }, 
       },
       ellipsis: true,  
-      hideInSearch: true,
-    },   
+      hideInTable: true,
+    }, 
     { 
-      title: '是否顯示',
+      title: '新增方式',
+      dataIndex: 'stype', 
+      valueEnum: { 
+        '': {
+          text: '全部', 
+        },
+        '0': {
+          text: '單筆新增', 
+        },
+        '1': {
+          text: '清單匯入',  
+        }, 
+        '2': {
+          text: '置物籃',  
+        }, 
+      },
+      ellipsis: true,  
+      hideInTable: true,
+    },  
+    { 
+      title: '前台顯示',
       dataIndex: 'isshow', 
       valueEnum: { 
         0: {
@@ -109,14 +178,15 @@ const SDGsBooks: React.FC<{}>  = () => {
         1: {
           text: '是',  
         }, 
-      },
+      }, 
       ellipsis: true,  
       hideInSearch: true,
-    },
+    }, 
     {
       title: "操作",
       dataIndex: "option",
       valueType: "option",
+      width: 300,
       render: (_, record: any) => {
         return (<Space> 
           {(record.source==='本館') && (
@@ -124,7 +194,10 @@ const SDGsBooks: React.FC<{}>  = () => {
             <Button
               type="default"
               onClick={() => {
-                history.push("/sdgsbooks/edit?sdgsId="+sdgsId+"&id=" + record.id);
+                setBookId(parseInt(record.id));
+                setMarcId(parseInt(record.marcId));
+                handleEditModalVisible(true);
+                //history.push("/sdgsbooks/edit?sdgsId="+sdgsId+"&id=" + record.id+"&marcId=" + record.marcId);
               }}
             >
               修改
@@ -155,57 +228,44 @@ const SDGsBooks: React.FC<{}>  = () => {
               刪除
             </Button>
           </>
-          )}
-          {(parseInt(record.marcId) !==0 ) && (<>
-            <Button
-              type="default"
-              onClick={() => {openNewWindow(record.marcId)  
-              }}
-            >
-              檢視
-            </Button>
-          </>)}
+          )} 
         </Space>);
       },
     },
   ];
   
-  const openNewWindow = (id: string) => {
-    // Specify your URL and other window.open parameters
-    window.open("https://webpacx-dev.k00.com.tw/bookDetail/" + id, '_blank')
-    
-  };
-  
-  const [SDGsData, setSDGsData]  = useState({}); 
-  useEffect(() => {
-    const fetchData = async () => {
-      let data = await getSDGs();
-      if (data !== undefined) setSDGsData(data);
-    };
-    fetchData();
-  }, []);
   let title  = "SDG "+sdgsId+" ";
   if(SDGsData!==undefined && SDGsData.data!==undefined && SDGsData.data.length>0 && sdgsId <= SDGsData.data.length  ){
     title += SDGsData.data[sdgsId-1].title;
   }
 
   return (<>
-  <Tab
-    title={title} 
-    sdgsId={sdgsId} 
-    breadcrumb={breadcrumb} 
+  <PageContainer
+      header={{
+      title: title, 
+      breadcrumb:  breadcrumb ,
+      }} 
+      extra={[(<>
+        <Button
+          type="primary" 
+          onClick={() => {
+           setBookId(0);
+           setMarcId(0);
+           handleEditModalVisible(true);
+            // history.push("/sdgsbooks/edit?sdgsId="+sdgsId+"&id=0");
+          }}
+        >
+          <PlusOutlined /> 新建
+        </Button>
+      </>)]}
+  >
+  <Tab 
+    sdgsId={sdgsId}  
     match={{ url: '/sdgs', path: '/sdgsbooks' }}
     location={{ pathname: 'sdgsbooks' }}
   >
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-    <Button
-      type="primary"
-      onClick={() => {
-        history.push("/sdgsbooks/edit?sdgsId="+sdgsId+"&id=0");
-      }}
-    >
-      <PlusOutlined /> 新建
-    </Button>
+   
     <ProTable<SDGsBooksItem>
       columns={columns}
       actionRef={actionRef}
@@ -241,7 +301,27 @@ const SDGsBooks: React.FC<{}>  = () => {
       dateFormatter="string"  
     />
     </Space>
-  </Tab>  
+  </Tab>
+ 
+  <BookListForm
+      title="查詢館藏" 
+      sdgsId = {sdgsId}
+      onCancel={() => {
+          handleDetailModalVisible(false);   
+      }} 
+      modalVisible={detailModalVisible}
+      isbn={isbn}
+  /> 
+  <BookEditForm 
+   sdgsId = {sdgsId}
+    onCancel={() => {
+        handleEditModalVisible(false);   
+    }} 
+    editModalVisible={editModalVisible}  
+    id={bookId}
+    marcId={marcId}
+  />
+  </PageContainer>  
   </>);
 };
 export default SDGsBooks;

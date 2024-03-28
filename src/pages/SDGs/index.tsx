@@ -44,7 +44,7 @@ const sdgs: React.FC<{}>  = () => {
         { SDGsData.data && SDGsData.data.map((item, index) => (  
           (<>         
           <Col xl={6} lg={12} md={12} sm={12} xs={12}> 
-          <SDGsCard bookCnts={item.bookCnts} no={index+1}
+          <SDGsCard bookCnts={item.bookCnts} no={index+1} holdCnts={item.holdCnts}
             fontColor={item.fontColor}  backgroundColor={item.backgroundColor} title={item.title} /> 
           </Col></>) 
         ))}  

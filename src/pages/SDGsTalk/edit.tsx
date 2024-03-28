@@ -3,7 +3,7 @@ import { history } from "umi";
 import {  getSDGsItemById  ,addSDGsItem } from "../service"; 
 import { PageContainer } from '@ant-design/pro-layout';
 import { Button, Divider, Form, Input,  message, Space,Radio} from "antd";
-
+import moment from "moment";
 import { FormInstance } from "antd/lib/form";
 import { SDGsItems } from "../SDGs/data";
 
@@ -30,21 +30,37 @@ const AddForm: React.FC<{}> = (props: any) => {
     
     console.info("sdgsId", sdgsId);
     console.info("id", id); 
-    const [isshow, setIsshow] = useState<number>(0);
+    const [isshow, setIsshow] = useState<number>(1);
     const [initialValues, setInitialValues] = useState<any>({});
     useEffect(() => {
         const fetchData = async () => {
             if (id !== 0) {
-                let item = await getSDGsItemById(id);
-                console.info("item", item.data); 
-                if (item !== undefined) { 
-                    setInitialValues({
-                        id: item.data.id,
-                        title: item.data.title, 
-                        isshow: item.data.isshow, 
+                let items = await getSDGsItemById(id);
+                console.info("item", items.data); 
+                console.info("muser", items.muser); 
+
+                if (items !== undefined) {  
+                    let insert_muser_name =  items.muser.filter(d => (d.id === items.data.insert_muser_id)).map((item) => { 
+                        return item.name; 
+                    });
+                    let update_muser_name =  items.muser.filter(d => (d.id === items.data.insert_muser_id)).map((item) => { 
+                         return item.name;
                     }); 
-                    setIsshow(parseInt(item.data.isshow));
+                    setInitialValues({
+                        id: items.data.id,
+                        title: items.data.title,
+                        isshow: items.data.isshow,
+                        insert_muser_name: insert_muser_name,
+                        insert_date: moment(items.data.insert_date).format("YYYY-MM-DD HH:mm"),
+                        update_muser_name: update_muser_name,
+                        update_date: moment(items.data.update_date).format("YYYY-MM-DD HH:mm"),
+                    });
+                    setIsshow(parseInt(items.data.isshow));
                 }; 
+            }else{
+                setInitialValues({ 
+                    isshow: 1, 
+                }); 
             }
         };
         fetchData();
@@ -121,7 +137,7 @@ const AddForm: React.FC<{}> = (props: any) => {
             <Form.Item name="title" label="討論項目" rules={[{ required: true }]}>
                 <Input /> 
             </Form.Item>
-            <Form.Item name="isshow" label="是否顯示" rules={[{ required: true }]}>
+            <Form.Item name="isshow" label="前台顯示" rules={[{ required: true }]}>
             <Radio.Group
               onChange={(e) => {
                 setIsshow(e.target.value);
@@ -133,6 +149,18 @@ const AddForm: React.FC<{}> = (props: any) => {
             </Radio.Group>
             </Form.Item>
             <Divider />
+            {(id!==0) ? ( <>
+                <h2>新增/修改記錄</h2>
+                <Space split={<Divider type="vertical" />} size={50}>
+                    {`新增人員：` + initialValues.insert_muser_name}
+                    {`新增時間：` + initialValues.insert_date}
+                    {`修改人員：` + initialValues.update_muser_name}
+                    {`修改時間：` + initialValues.update_date}
+                </Space>
+                <Divider /></>
+            ) : (
+                <></>
+            )}
             <Form.Item style={{ textAlign: "center" }}>
                 <Space>
                 <Button type="default" onClick={() => history.push("/sdgs/sdgstalk?sdgsId="+sdgsId+"&maincodeId="+maincodeId)}>

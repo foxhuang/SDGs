@@ -2,12 +2,14 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components'; 
 import request from 'umi-request'; 
 import React, { useEffect, useRef, useState } from "react";
-import Tab from '../../components/SDGs/Tab'; 
+import { Tab ,DetailForm } from '../../components/SDGs'; 
 import {  getSDGs,delSDGsItem  } from "../service";
-import { Button,  Space, message } from "antd";
+import { Button,  Space, message,DatePicker } from "antd";
 import { history } from "umi";
 import { PlusOutlined } from "@ant-design/icons";
 import { SDGsItems } from "./data";
+import { PageContainer } from '@ant-design/pro-layout';
+const { RangePicker } = DatePicker;
 
 const SDGsAction: React.FC<{}>  = () => {
   let querystring = window.location.search.replace('?', '');
@@ -22,6 +24,13 @@ const SDGsAction: React.FC<{}>  = () => {
         sdgsId = parseInt(q[1]);
     }  
   }); 
+
+  const [id, setId] = useState<number>(0);
+
+  const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
+    false
+  );
+
   const actionRef = useRef<ActionType>(); 
   const columns: ProColumns<SDGsItems>[] = [
     {
@@ -49,18 +58,20 @@ const SDGsAction: React.FC<{}>  = () => {
     { 
       title: '資料來源',
       dataIndex: 'source', 
-      ellipsis: true,  
-      hideInSearch: true,
+      ellipsis: true,   
     },   
     
     { 
-      title: '是否顯示',
+      title: '前台顯示',
       dataIndex: 'isshow', 
       valueEnum: { 
-        0: {
+        '-1': {
+          text: '全部', 
+        },
+        '0': {
           text: '否', 
         },
-        1: {
+        '1': {
           text: '是',  
         }, 
       },
@@ -68,19 +79,36 @@ const SDGsAction: React.FC<{}>  = () => {
     }, 
     {
         title: '新增時間',
-        key: 'showTime',
+        key: 'insertDate',
         dataIndex: 'insert_date',
+        valueType: 'date',  
+        renderFormItem: () => <RangePicker format={"YYYY-MM-DD"}/>,
+      },  
+      {
+        title: '修改時間',
+        key: 'showTime',
+        dataIndex: 'update_date',
         valueType: 'date', 
         hideInSearch: true,
-      },      
+      },     
       {
         title: "操作",
         dataIndex: "option",
         valueType: "option",
+        width: 300,
         render: (_, record: any) => {
           return (<Space> 
+            <Button
+              type="default"
+              onClick={() => {
+                handleDetailModalVisible(true);
+                setId(record.id);
+              }}
+            >
+              詳細
+            </Button> 
             {(record.source==='本館') && (
-              <>
+              <>  
               <Button
                 type="default"
                 onClick={() => {
@@ -150,24 +178,31 @@ const SDGsAction: React.FC<{}>  = () => {
   if(SDGsData!==undefined && SDGsData.data!==undefined && SDGsData.data.length>0 && sdgsId <= SDGsData.data.length  ){
     title += SDGsData.data[sdgsId-1].title;
   }
+  
 
-  return (  
-    <Tab
-      title={title} 
-      sdgsId={sdgsId} 
-      breadcrumb={breadcrumb}
+  return (
+    <PageContainer
+      header={{
+      title: title, 
+      breadcrumb:  breadcrumb ,
+      }} 
+      extra={[(<>
+        <Button
+          type="primary"
+          onClick={() => {
+            history.push("/sdgsaction/edit?sdgsId="+sdgsId+"&id=0");
+          }}
+        >
+          <PlusOutlined /> 新建
+        </Button>
+      </>)]}
+    >
+    <Tab 
+      sdgsId={sdgsId}  
       match={{ url: '/sdgs', path: '/sdgsaction'  }}
       location={{ pathname: 'sdgsaction' }}
     >
-    <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-    <Button
-      type="primary"
-      onClick={() => {
-        history.push("/sdgsaction/edit?sdgsId="+sdgsId+"&id=0");
-      }}
-    >
-      <PlusOutlined /> 新建
-    </Button>
+    <Space direction="vertical" size="middle" style={{ width: "100%" }}> 
     <ProTable<SDGsItems>
       columns={columns}
       actionRef={actionRef}
@@ -205,7 +240,20 @@ const SDGsAction: React.FC<{}>  = () => {
       dateFormatter="string"  
     />
     </Space>
-    </Tab>  
+    {id !== 0 && ( <>
+    <DetailForm
+      title="一起行動"
+      label="行動項目"
+      stype = "action"
+      onCancel={() => {
+        handleDetailModalVisible(false); 
+        setId(0);
+      }}
+      modalVisible={detailModalVisible}
+      id={id}
+    /></>)}
+    </Tab> 
+  </PageContainer>   
   );
 };
 export default SDGsAction;

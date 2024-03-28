@@ -313,6 +313,10 @@ export type SDGsBooksItem = {
   isshow: string;
   sdgsId: number;
   maincodeId: number;
+  reasons:string,
+  extended:string;
+  flag:string;
+  share:string;
 };
 
 type SDGsItems = {

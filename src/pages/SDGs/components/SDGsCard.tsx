@@ -42,7 +42,7 @@ const SDGsCard = (props) => {
                 <Row justify={"center"} > 
                 <Paragraph>
                     <Text strong style={{ fontSize: '36px' }}>
-                    {props.bookCnts}
+                    {props.holdCnts}
                     </Text>
                     {' '}
                     <Text   style={{ fontSize: '14px' }}>

@@ -2,10 +2,13 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components'; 
 import request from 'umi-request'; 
 import React, { useEffect, useRef, useState } from "react";
-import Tab from '../../components/SDGs/Tab'; 
-import {  getSDGs   } from "../service";
-
- 
+import {Tab, DetailForm } from '../../components/SDGs'; 
+import { Button,  Space, message ,DatePicker} from "antd";
+import { history } from "umi";
+import { PlusOutlined } from "@ant-design/icons";
+import {  getSDGs, delSDGsKeyword } from "../service";
+import { PageContainer } from '@ant-design/pro-layout';
+const { RangePicker } = DatePicker;
 type SDGsItems = {
   url: string;
   id: number;
@@ -29,7 +32,13 @@ const SDGsKeywd: React.FC<{}>  = () => {
         sdgsId = parseInt(q[1]);
     }  
   }); 
-  const actionRef = useRef<ActionType>(); 
+  const actionRef = useRef<ActionType>();
+  
+  const [id, setId] = useState<number>(0);
+
+  const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
+    false
+  ); 
   const columns: ProColumns<SDGsItems>[] = [
     {
       title: "#",
@@ -56,18 +65,20 @@ const SDGsKeywd: React.FC<{}>  = () => {
     { 
       title: '資料來源',
       dataIndex: 'source', 
-      ellipsis: true,  
-      hideInSearch: true,
+      ellipsis: true,   
     },   
     
     { 
-      title: '是否顯示',
+      title: '前台顯示',
       dataIndex: 'isshow', 
       valueEnum: { 
-        0: {
+        '-1': {
+          text: '全部', 
+        },
+        '0': {
           text: '否', 
         },
-        1: {
+        '1': {
           text: '是',  
         }, 
       },
@@ -75,37 +86,69 @@ const SDGsKeywd: React.FC<{}>  = () => {
     }, 
     {
         title: '新增時間',
-        key: 'showTime',
+        key: 'insertDate',
         dataIndex: 'insert_date',
-        valueType: 'date', 
-        hideInSearch: true,
+        valueType: 'date',  
+        renderFormItem: () => <RangePicker format={"YYYY-MM-DD"}/>,
       },      
-    {
-      title: '操作',
-      valueType: 'option',
-      key: 'option',
-      render: (text, record, _, action) => [ 
-        <a
-          key="editable"
-          onClick={() => {
-            action?.startEditable?.(record.id);
-          }}
-        >
-          編輯
-        </a>,
-        <a
-        key="editable"
-        onClick={() => {
-          action?.startEditable?.(record.id);
-        }}
-      >
-        刪除
-      </a>,
-        <a href={record.url} target="_blank" rel="noopener noreferrer" key="view">
-          查看
-        </a>
-      ],
-    },
+      {
+        
+        title: "操作",
+        dataIndex: "option",
+        valueType: "option",
+        width: 300,
+        render: (_, record: any) => {
+          return (<Space> 
+            <Button
+              type="default"
+              onClick={() => {
+                handleDetailModalVisible(true);
+                setId(record.id);
+              }}
+            >
+              詳細
+            </Button> 
+            {(record.source==='本館') && (
+              <>  
+              <Button
+                type="default"
+                onClick={() => {
+                  history.push("/sdgskeyword/edit?sdgsId="+sdgsId+"&id=" + record.id);
+                }}
+              >
+                修改
+              </Button>
+              <Button
+                type="default"
+                danger
+                onClick={async () => {
+                  if (confirm("確定刪除嗎？")) {
+                    const hide = message.loading("正在配置");
+                    try {
+                      const result = await delSDGsKeyword(record.id);
+                      hide();
+    
+                      if (result !== null && result.success) {
+                        message.success("刪除成功");
+                        if (actionRef.current) actionRef.current.reload();
+                      } else {
+                        message.success("刪除失敗請重試！");
+                      }
+                    } catch (error) {
+                      hide();
+                    }
+                    
+                  }
+                }}
+              >
+                刪除
+              </Button>
+            </>
+            )}
+             
+          </Space>);
+        }, 
+      },
   ];
  
   const [breadcrumb, setData] = useState({});
@@ -137,14 +180,29 @@ const SDGsKeywd: React.FC<{}>  = () => {
     title += SDGsData.data[sdgsId-1].title;
   }
   
-  return (  
-    <Tab
-      title={title} 
-      sdgsId={sdgsId} 
-      breadcrumb={breadcrumb}
+  return (
+    <PageContainer
+      header={{
+      title: title, 
+      breadcrumb:  breadcrumb ,
+      }} 
+      extra={[(<>
+        <Button
+          type="primary"
+          onClick={() => {
+            history.push("/sdgskeyword/add?sdgsId="+sdgsId);
+          }}
+        >
+          <PlusOutlined /> 新建
+        </Button>
+      </>)]}
+    >
+    <Tab 
+      sdgsId={sdgsId}  
       match={{ url: '/sdgs', path: '/sdgskeywd'  }}
       location={{ pathname: 'sdgskeywd' }}
     >
+    <Space direction="vertical" size="middle" style={{ width: "100%" }}>
     <ProTable<SDGsItems>
       columns={columns}
       actionRef={actionRef}
@@ -181,8 +239,21 @@ const SDGsKeywd: React.FC<{}>  = () => {
       }}
       dateFormatter="string"  
     />
-    </Tab> 
- 
+    </Space>
+    {id !== 0 && ( <>
+    <DetailForm
+      title="關鍵字"
+      label="關鍵字"
+      stype="kw"
+      onCancel={() => {
+        handleDetailModalVisible(false); 
+        setId(0);
+      }}
+      modalVisible={detailModalVisible}
+      id={id}
+    /></>)} 
+    </Tab>
+  </PageContainer>    
   );
 };
 export default SDGsKeywd;

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { history } from "umi";
-import {  getSDGsBooksById  ,addSDGsBooks,getChatGPT } from "../service"; 
-import { PageContainer } from '@ant-design/pro-layout';
-import { Button, Divider, Form, Input,  message, Space,Row,Checkbox,Col } from "antd";
-import { QueryForm,SpinForm } from '../../components/SDGs'; 
 import { FormInstance } from "antd/lib/form";
-import { SDGsBooksItem } from "../SDGs/data";
-import '../css/customButtonStyles.css'; 
+import { PageContainer } from '@ant-design/pro-layout';
 import { PlusOutlined ,CloseOutlined  } from '@ant-design/icons';
+import { Button, Divider,Modal, Form, Input,  message, Space,Row,Checkbox,Col } from "antd";
+import {  getSDGsBooksById  ,addSDGsBooks,getChatGPT } from "../../pages/service"; 
+import { QueryForm,SpinForm } from '../../components/SDGs';  
+import { SDGsBooksItem } from "../../pages/SDGs/data"; 
+import '../../pages/css/customButtonStyles.css';  
+
  
 const formRef = React.createRef<FormInstance>();
 
@@ -15,8 +15,11 @@ const formItemLayout = {
   labelCol: { span: 3 }
 };
 
-const AddForm: React.FC<{}> = (props: any) => {
-    const [breadcrumb, setData] = useState({});
+const BookEditForm: React.FC<{}> = (props: any) => {
+    const { editModalVisible, onCancel,sdgsId,id,marcId} = props; 
+    console.log("id====>",id);
+    console.log("marcId====>",marcId);
+
     const [BookTitle, setBookTitle] =useState('');  
     const [BookISBN, setBookISBN] =useState('');   
     const [Reasons, setReasons] =useState('');  
@@ -25,71 +28,72 @@ const AddForm: React.FC<{}> = (props: any) => {
     const [BookMarcId, setBookMarcId] = useState(0);  
     const [inputs, setInputs] = useState([{ key: 0, value: '' }]);
     const [inputCnts, setInputCnts] = useState(0);  
-    const handleBTitleChange = (value) => { 
-        console.log("value",value);
-        setBookTitle(value); 
-    };
-    const handlePubyearChange = (value) => { 
-        console.log("value",value);
-        //setBookPubyear(value); 
-    };
+    const [seconds, setSeconds] = useState(0);
+    const [gptRun, setGPTRun] = useState(0); 
  
-
-    const handleBISBNChange = (value) => { 
-        console.log("value",value);
-        setBookISBN(value); 
-    };
     
-
-     
-    let querystring = window.location.search.replace('?', '');
-    let params = querystring.split('&');
-    let sdgsId = 0;
-    let id = 0;
-    let marcId=0;
-    params.map(param => {
-      var q = param.split('=');
-      if (q[0] === 'sdgsId') {
-        sdgsId = parseInt(q[1]);
-      }else if (q[0] === 'id') {
-        id = parseInt(q[1]);
-      }else if (q[0] === 'marcId') {
-        marcId = parseInt(q[1]);
-      }
-    });  
-    
-   
-
-    useEffect(() => {
-        if(marcId!==0){
-            setBookMarcId(marcId);
-        }
-        setData({ items: [
-            {
-              title: 'SDGs 目標管理',
-            },
-            { 
-                title: <a href="../sdgs/">SDGs 目標列表</a>, 
-            },
-            { 
-                title: <a href={"../sdgs/sdgsbooks?sdgsId="+sdgsId}>書單</a>, 
-            },
-            { 
-                title: "編輯書單", 
-            },
-        ],});
-    }, []);
-    const title = "SDGs "+sdgsId+" 書單";
     const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
         false
       ); 
     const [spinmodalVisible, handleSpinModalVisible] = useState<boolean>(
         false
-    );
-      
+    ); 
+    
+    useEffect(() => {
+        console.log("id==",id);
+        console.log("marcId==",marcId); 
+        setBookMarcId(marcId); 
+        const fetchData = async () => { 
+            if (id !== 0) {
+                let sdgsbook = await getSDGsBooksById(id);
+                console.info("sdgsbook", sdgsbook.data); 
+                if (sdgsbook !== undefined) {  
+                    setBookTitle(sdgsbook.data.title||''); 
+                    setBookISBN(sdgsbook.data.isbn||''); 
+                    //setBookPubyear(sdgsbook.data.pubyear||''); 
+                    setReasons(sdgsbook.data.reasons||'');
+                    setShare(sdgsbook.data.share||'0');
+                    console.info("isshow", sdgsbook.data.isshow); 
+                    setIsShow(''+sdgsbook.data.isshow||'0');
+                    if(sdgsbook.data.extended !== null){
+                        const newInputs = []; 
+                        sdgsbook.data.extended.split("^A^").map((question,index) => { 
+                            newInputs.push({ key:index, value: question }); 
+                        })
+                        setInputs(newInputs); 
+                        setInputCnts(newInputs.length);
+                    }
+                 }; 
+            }else{
+                setBookTitle(''); 
+                setBookISBN(''); 
+                setReasons('');
+                setShare('0');
+                setIsShow('0');
+                setBookMarcId(0);
+                const newInputs = [{ key: 0, value: '' }];
+                setInputs(newInputs); 
+                setInputCnts(0);
+            }
+        };
+        fetchData();
+    }, [id]);
+  
+   
+ 
+    const handleBTitleChange = (value) => { 
+        console.log("value",value);
+        setBookTitle(value); 
+    };
+ 
+    const handleBISBNChange = (value) => { 
+        console.log("value",value);
+        setBookISBN(value); 
+    };
     const onFinish = async (values: SDGsBooksItem) => {
         console.info("onFinish", values);
-        if (await onSubmit(values)) history.push("/sdgs/sdgsbooks?sdgsId="+sdgsId);
+        if (await onSubmit(values)) onCancel();
+         //history.push("/sdgs/sdgsbooks?sdgsId="+sdgsId);
     };
 
     const onFinishNext = async (values: SDGsBooksItem) => {
@@ -107,7 +111,18 @@ const AddForm: React.FC<{}> = (props: any) => {
             alert("請輸入延伸討論");
             return; 
         }else{
-            if (await onSubmit(values))   window.location.reload();
+            if (await onSubmit(values))  {
+                setBookTitle(''); 
+                setBookISBN(''); 
+                setReasons('');
+                setShare('0');
+                setIsShow('0');
+                setBookMarcId(0);
+                const newInputs = [{ key: 0, value: '' }];
+                setInputs(newInputs); 
+                setInputCnts(0);
+            }
+             //window.location.reload();
         }
  
         
@@ -157,35 +172,7 @@ const AddForm: React.FC<{}> = (props: any) => {
         setInputs(newInputs); 
     };
  
-    useEffect(() => {
-        const fetchData = async () => {
-            if (id !== 0) {
-                let sdgsbook = await getSDGsBooksById(id);
-                console.info("sdgsbook", sdgsbook.data); 
-                if (sdgsbook !== undefined) {  
-                    setBookTitle(sdgsbook.data.title||''); 
-                    setBookISBN(sdgsbook.data.isbn||''); 
-                    //setBookPubyear(sdgsbook.data.pubyear||''); 
-                    setReasons(sdgsbook.data.reasons||'');
-                    setShare(sdgsbook.data.share||'0');
-                    console.info("isshow", sdgsbook.data.isshow); 
-                    setIsShow(''+sdgsbook.data.isshow||'0');
-                    if(sdgsbook.data.extended !== null){
-                        const newInputs = []; 
-                        sdgsbook.data.extended.split("^A^").map((question,index) => { 
-                            newInputs.push({ key:index, value: question }); 
-                        })
-                        setInputs(newInputs); 
-                        setInputCnts(newInputs.length);
-                    }
-                 }; 
-            }
-        };
-        fetchData();
-    }, []);
-  
-    const [seconds, setSeconds] = useState(0);
-    const [gptRun, setGPTRun] = useState(0);
+    
 
     const getGPTData = async () => { 
         setSeconds(0);
@@ -222,7 +209,6 @@ const AddForm: React.FC<{}> = (props: any) => {
     };
  
     const onSubmit = async (values: SDGsBooksItem) => {
-    
         values.id = id; 
         values.sdgsId = sdgsId; 
         values.title = BookTitle;
@@ -264,12 +250,10 @@ const AddForm: React.FC<{}> = (props: any) => {
     
 
     return (
-        <>
-        <PageContainer
-            header={{
-            title: title, 
-            breadcrumb:  breadcrumb ,
-            }} 
+        <> 
+        <Modal destroyOnClose title="編輯書單" visible={editModalVisible} onCancel={() => onCancel()} width={1000} footer={null}>
+        <Divider /> 
+        <PageContainer 
             extra={[
                 id === 0 && ( <>
                     <Button
@@ -409,13 +393,13 @@ const AddForm: React.FC<{}> = (props: any) => {
             <Divider />
             <Form.Item style={{ textAlign: "center" }}>
                 <Space>
-                <Button type="default" onClick={() => history.push("/sdgs/sdgsbooks?sdgsId="+sdgsId)}>
-                    回上一頁
+                <Button type="default" onClick={() =>onCancel() }>
+                    關閉
                 </Button>
                 <Button type="primary" htmlType="submit">
                 完成 
                 </Button>
-                {id!==0 && (<>
+                {id===0 && (<>
                 <Button type="primary" htmlType="button"  onClick={handleSubmit}>
                 完成並新增下一筆
                 </Button></>)}
@@ -439,8 +423,9 @@ const AddForm: React.FC<{}> = (props: any) => {
         {gptRun !== 0 && ( <> 
             <SpinForm seconds={seconds} modalVisible={spinmodalVisible}/>
         </>)}
-        </PageContainer></>
+        </PageContainer>
+    </Modal></>
     );
 };
 
-export default AddForm;
+export default BookEditForm;
