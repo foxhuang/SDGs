@@ -25,13 +25,13 @@ export async function getSDGsBooksById(id?: number) {
     }
     return null;
 }
+
  
-export async function getChatGPT(sdgsId?: number,marcId?: number) { 
+export async function getChatGPT(sdgsId?: number,marcId?: number,useAI?: number) { 
     try { 
-        const response = await request('../../hysdgs/getChatGPT?sdgsId='+sdgsId+'&marcId='+marcId, {
+        const response = await request('../../hysdgs/getChatGPT?sdgsId='+sdgsId+'&marcId='+marcId+'&useAI='+useAI, {
             method: 'GET', 
         }); 
-        console.log(response);
         return response;
     } catch (error) { 
         console.error(error);
@@ -139,6 +139,19 @@ export async function delSDGsKeyword(id?: number) {
 }
 
 
+export async function getBagM() {
+    try {
+        const response = await request('../../hysdgs/getBagM', {
+            method: 'GET', 
+        }); 
+        console.log(response);
+        return response;
+    } catch (error) { 
+        console.error(error);
+    }
+    return null;
+} 
+
 export async function getSDGsKeywordById(id?: number) { 
     try {
         const response = await request('../../hysdgs/getSDGsKeywordById?id='+id, {
@@ -152,3 +165,15 @@ export async function getSDGsKeywordById(id?: number) {
     return null;
 }
 
+export async function addSDGsBooksByBagM(bagmId?: number,sdgsId?: number,formSave?: number,formShow?: number) { 
+    try {
+        const response = await request('../../hysdgs/addSDGsBooksByBagM?bagmId='+bagmId+"&sdgsId="+sdgsId+"&formSave="+formSave+"&formShow="+formShow, {
+            method: 'GET', 
+        }); 
+        console.log(response);
+        return response;
+    } catch (error) { 
+        console.error(error);
+    }
+    return null;
+}

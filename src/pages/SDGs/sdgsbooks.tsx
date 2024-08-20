@@ -3,14 +3,14 @@ import { ProTable } from '@ant-design/pro-components';
 import request from 'umi-request'; 
 import React, { useEffect, useRef, useState } from "react";
 import Tab from '../../components/SDGs/Tab'; 
-import {  getSDGs,delSDGsBooksById  } from "../service";
-import { Button,  Space, message,DatePicker } from "antd";
-import { history } from "umi";
-import { PlusOutlined } from "@ant-design/icons";
+import ExportExcelButton from '../../components/SDGs/ExportExcelButton'; 
+import {  getSDGs,delSDGsBooksById,addSDGsBooks  } from "../service";
 import { SDGsBooksItem } from "./data";
 import { PageContainer } from '@ant-design/pro-layout';
-import { BookListForm,BookEditForm } from '../../components/SDGs'; 
- 
+import { BookListForm,BookViewForm,BookEditForm } from '../../components/SDGs'; 
+import { DownOutlined,PlusOutlined,UploadOutlined } from '@ant-design/icons';
+import { Menu, Dropdown, Button,  Space, message,DatePicker } from "antd";
+import { history } from "umi";
 
 const { RangePicker } = DatePicker;
 const SDGsBooks: React.FC<{}>  = () => {
@@ -26,16 +26,21 @@ const SDGsBooks: React.FC<{}>  = () => {
     
   const [breadcrumb, setData] = useState({}); 
   const [SDGsData, setSDGsData]  = useState({}); 
-  const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
-    false
-  );
   const [isbn, setISBN]  = useState(''); 
-  const [editModalVisible, handleEditModalVisible] = useState<boolean>(
-    false
-  );
-
   const [bookId, setBookId]  = useState(0); 
   const [marcId, setMarcId]  = useState(0); 
+
+  const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
+    false
+  ); 
+  const [editModalVisible, handleEditModalVisible] = useState<boolean>(
+    false
+  ); 
+  const [viewModalVisible, handleViewModalVisible] = useState<boolean>(
+    false
+  ); 
+  
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,13 +64,30 @@ const SDGsBooks: React.FC<{}>  = () => {
   }, []);
 
   const openBookList = (isbn: string) => {
-    console.log(isbn);
     setISBN(isbn); 
     handleDetailModalVisible(true);  
   };
 
-  
+
   const actionRef = useRef<ActionType>(); 
+  const [tableData, setTableData] = useState({});  
+  const excelHeaders = [
+    { title: '題名', key: 'title' , type: 'string', width: 100},
+    { title: 'ISBN', key: 'isbn' , type: 'string', width: 20},
+    { title: '出版年', key: 'pubyear', type: 'string'},
+    { title: '資料來源', key: 'source', type: 'string' , width: 15}, 
+    { title: '新增時間', key: 'insert_date', type: 'date', width: 20 }, 
+    { title: '本館有書', key: 'marcId', type: 'y&n0'},  
+  ];
+  const handleRefresh = () => { 
+    handleEditModalVisible(false);
+    if (actionRef.current) actionRef.current.reload();
+  };
+
+  const handleFinish = () => {
+    handleEditModalVisible(false);
+    window.location.reload();
+  };
   const columns: ProColumns<SDGsBooksItem>[] = [
     {
       title: "#",
@@ -179,16 +201,50 @@ const SDGsBooks: React.FC<{}>  = () => {
           text: '是',  
         }, 
       }, 
-      ellipsis: true,  
-      hideInSearch: true,
+      ellipsis: true,   
     }, 
     {
       title: "操作",
       dataIndex: "option",
       valueType: "option",
       width: 300,
-      render: (_, record: any) => {
+      render: (_, record: any) => { 
         return (<Space> 
+          <Button
+              type="default"
+              onClick={() => { 
+                setBookId(parseInt(record.id));
+                handleViewModalVisible(true);
+              }}
+            >
+              詳細
+            </Button>
+           <Button
+              type="default"
+              onClick={async () => {
+                if (confirm("確定要修改嗎？")) {
+                  let isshow = (record.isshow === 1) ? "0" : "1"  ;
+                  record.isshow = isshow;  
+                  const hide = message.loading("正在配置");
+                  try {
+                      const result = await addSDGsBooks(record); 
+                      hide();
+    
+                      if (result !== null && result.success) {
+                        message.success("修改成功");
+                        if (actionRef.current) actionRef.current.reload();
+                      } else {
+                        message.success("修改失敗請重試！");
+                      }
+                    } catch (error) {
+                      message.success("修改失敗請重試！");
+                      hide();
+                    } 
+                  }
+              }}
+            >
+            {record.isshow === 1 ? "隱藏" : "顯示" } 
+            </Button>
           {(record.source==='本館') && (
             <>
             <Button
@@ -202,6 +258,8 @@ const SDGsBooks: React.FC<{}>  = () => {
             >
               修改
             </Button>
+          </> )} 
+          {(record.insert_muser_id !== '' && record.insert_muser_id !== null && parseInt(record.insert_muser_id)===1) && (<>
             <Button
               type="default"
               danger
@@ -219,9 +277,9 @@ const SDGsBooks: React.FC<{}>  = () => {
                       message.success("刪除失敗請重試！");
                     }
                   } catch (error) {
+                    message.success("刪除失敗請重試！");
                     hide();
-                  }
-                  
+                  } 
                 }
               }}
             >
@@ -237,7 +295,22 @@ const SDGsBooks: React.FC<{}>  = () => {
   let title  = "SDG "+sdgsId+" ";
   if(SDGsData!==undefined && SDGsData.data!==undefined && SDGsData.data.length>0 && sdgsId <= SDGsData.data.length  ){
     title += SDGsData.data[sdgsId-1].title;
-  }
+  } 
+  
+  const menu = (
+    <Menu>
+     <Menu.Item key="1">
+        <ExportExcelButton data={tableData} headers={excelHeaders}/> 
+      </Menu.Item>
+      <Menu.Item key="2">
+        <Button  
+          onClick={() => { history.push("/sdgs/fileupload?sdgsId="+sdgsId)}}
+          type="primary">
+          <UploadOutlined />匯入
+        </Button>
+      </Menu.Item> 
+    </Menu>
+  );
 
   return (<>
   <PageContainer
@@ -248,7 +321,7 @@ const SDGsBooks: React.FC<{}>  = () => {
       extra={[(<>
         <Button
           type="primary" 
-          onClick={() => {
+          onClick={() => {  
            setBookId(0);
            setMarcId(0);
            handleEditModalVisible(true);
@@ -256,9 +329,14 @@ const SDGsBooks: React.FC<{}>  = () => {
           }}
         >
           <PlusOutlined /> 新建
-        </Button>
+        </Button>  
+        <Dropdown overlay={menu}>
+          <Button>
+            工具 <DownOutlined />
+          </Button>
+        </Dropdown>  
       </>)]}
-  >
+  > 
   <Tab 
     sdgsId={sdgsId}  
     match={{ url: '/sdgs', path: '/sdgsbooks' }}
@@ -271,11 +349,27 @@ const SDGsBooks: React.FC<{}>  = () => {
       actionRef={actionRef}
       cardBordered
       request={(params) => {
-        return request<{
+        return  request<{
           data: SDGsBooksItem[];
         }>('../../hysdgs/getSDGsBooks', { 
           params,
-        });
+        }).then((response) => {
+          if (response.data !== undefined) {
+            setTableData(response.data);
+            return {
+              data: response.data,
+              muser: response.muser,
+              success: response.success,
+              total: response.total,
+            };
+          } else {
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
+          }
+        });  
       }}
        
       editable={{
@@ -303,23 +397,33 @@ const SDGsBooks: React.FC<{}>  = () => {
     </Space>
   </Tab>
  
-  <BookListForm
-      title="查詢館藏" 
-      sdgsId = {sdgsId}
+  <BookListForm 
       onCancel={() => {
           handleDetailModalVisible(false);   
       }} 
+      title="查詢館藏" 
+      sdgsId = {sdgsId}
       modalVisible={detailModalVisible}
       isbn={isbn}
   /> 
-  <BookEditForm 
-   sdgsId = {sdgsId}
+  <BookEditForm   
     onCancel={() => {
         handleEditModalVisible(false);   
     }} 
+    sdgsId = {sdgsId}
     editModalVisible={editModalVisible}  
     id={bookId}
     marcId={marcId}
+    handleRefresh={handleRefresh}
+    handleFinish={handleFinish}
+  />
+   <BookViewForm   
+    onCancel={() => {
+        handleViewModalVisible(false);   
+    }} 
+    sdgsId = {sdgsId}
+    viewModalVisible={viewModalVisible}  
+    id={bookId} 
   />
   </PageContainer>  
   </>);

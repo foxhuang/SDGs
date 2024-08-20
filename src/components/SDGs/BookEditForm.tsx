@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { FormInstance } from "antd/lib/form";
-import { PageContainer } from '@ant-design/pro-layout';
+import { FormInstance } from "antd/lib/form"; 
 import { PlusOutlined ,CloseOutlined  } from '@ant-design/icons';
 import { Button, Divider,Modal, Form, Input,  message, Space,Row,Checkbox,Col } from "antd";
 import {  getSDGsBooksById  ,addSDGsBooks,getChatGPT } from "../../pages/service"; 
-import { QueryForm,SpinForm } from '../../components/SDGs';  
+import { QueryForm,SpinForm,KBConfirmForm ,KBDataForm,ShareKBConfirmForm} from '../../components/SDGs';  
 import { SDGsBooksItem } from "../../pages/SDGs/data"; 
 import '../../pages/css/customButtonStyles.css';  
 
@@ -16,32 +15,45 @@ const formItemLayout = {
 };
 
 const BookEditForm: React.FC<{}> = (props: any) => {
-    const { editModalVisible, onCancel,sdgsId,id,marcId} = props; 
-    console.log("id====>",id);
-    console.log("marcId====>",marcId);
+    const { editModalVisible, onCancel,sdgsId,id,marcId,handleRefresh,handleFinish} = props;  
 
     const [BookTitle, setBookTitle] =useState('');  
     const [BookISBN, setBookISBN] =useState('');   
     const [Reasons, setReasons] =useState('');  
-    const [Share, setShare] =useState('0');  
+    const [ReadOnly, setReadOnly] =useState('0');  
+    const [Share, setShare] =useState('1');  
+    const [Source, setSource] =useState('');  
+    const [ShowShare, setShowShare] =useState('1');  
+    const [ShareDisable, setShareDisable] =useState('0');   
     const [IsShow, setIsShow] =useState('0');   
     const [BookMarcId, setBookMarcId] = useState(0);  
     const [inputs, setInputs] = useState([{ key: 0, value: '' }]);
     const [inputCnts, setInputCnts] = useState(0);  
     const [seconds, setSeconds] = useState(0);
     const [gptRun, setGPTRun] = useState(0); 
- 
-    
+    const [GPTData, setGPTData] = useState({}); 
+    const [booksItem, setSDGsBooksItem] = useState<SDGsBooksItem>(); 
+    const [isReload, setReload] = useState(false); 
+   
     const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
         false
       ); 
     const [spinmodalVisible, handleSpinModalVisible] = useState<boolean>(
         false
     ); 
-    
-    useEffect(() => {
-        console.log("id==",id);
-        console.log("marcId==",marcId); 
+
+    const [kbmodalVisible, handleKBModalVisible] = useState<boolean>(
+        false
+    );
+
+    const [kbdatamodalVisible, handleKBDataModalVisible] = useState<boolean>(
+        false
+    );
+    const [sharekbdatamodalVisible, handleShareKBDataModalVisible] = useState<boolean>(
+        false
+    );
+
+    useEffect(() => { 
         setBookMarcId(marcId); 
         const fetchData = async () => { 
             if (id !== 0) {
@@ -52,163 +64,50 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                     setBookISBN(sdgsbook.data.isbn||''); 
                     //setBookPubyear(sdgsbook.data.pubyear||''); 
                     setReasons(sdgsbook.data.reasons||'');
-                    setShare(sdgsbook.data.share||'0');
-                    console.info("isshow", sdgsbook.data.isshow); 
+                    setShare(sdgsbook.data.share||'0');  
+                    setReadOnly("0");
+                    setShowShare('0');
                     setIsShow(''+sdgsbook.data.isshow||'0');
                     if(sdgsbook.data.extended !== null){
                         const newInputs = []; 
-                        sdgsbook.data.extended.split("^A^").map((question,index) => { 
+                        sdgsbook.data.extended.split("^Z").map((question,index) => { 
                             newInputs.push({ key:index, value: question }); 
                         })
                         setInputs(newInputs); 
                         setInputCnts(newInputs.length);
+                    }else{
+                        const newInputs = [{ key: 0, value: '' }];
+                        setInputs(newInputs); 
+                        setInputCnts(0);
                     }
                  }; 
             }else{
                 setBookTitle(''); 
                 setBookISBN(''); 
                 setReasons('');
-                setShare('0');
-                setIsShow('0');
+                setShare('1');
+                setShowShare('1');
+                setReadOnly("0");
+                setIsShow('1');
+                setShareDisable('0');
                 setBookMarcId(0);
                 const newInputs = [{ key: 0, value: '' }];
                 setInputs(newInputs); 
-                setInputCnts(0);
+                setInputCnts(0); 
             }
         };
         fetchData();
     }, [id]);
-  
    
- 
-    const handleBTitleChange = (value) => { 
-        console.log("value",value);
+    const handleBTitleChange = (value) => {  
         setBookTitle(value); 
     };
  
-    const handleBISBNChange = (value) => { 
-        console.log("value",value);
+    const handleBISBNChange = (value) => {  
         setBookISBN(value); 
     };
-    const onFinish = async (values: SDGsBooksItem) => {
-        console.info("onFinish", values);
-        if (await onSubmit(values)) onCancel();
-         //history.push("/sdgs/sdgsbooks?sdgsId="+sdgsId);
-    };
 
-    const onFinishNext = async (values: SDGsBooksItem) => {
-        console.info("onFinishNext", values);
-        if (BookTitle===''){
-            alert("請輸入題名");
-            return;
-        }else if(BookISBN===''){
-            alert("請輸入ISBN");
-            return;
-        }else if(Reasons===''){
-            alert("請輸入推薦緣由");
-            return;
-        }else if(inputs[0].value===''){
-            alert("請輸入延伸討論");
-            return; 
-        }else{
-            if (await onSubmit(values))  {
-                setBookTitle(''); 
-                setBookISBN(''); 
-                setReasons('');
-                setShare('0');
-                setIsShow('0');
-                setBookMarcId(0);
-                const newInputs = [{ key: 0, value: '' }];
-                setInputs(newInputs); 
-                setInputCnts(0);
-            }
-             //window.location.reload();
-        }
- 
-        
-    };
-    
-    
-       
-    const setRecord = (data: any) => {
-        console.log("data.flag="+data.flag);
-        if(data.flag !== "0"){
-            if(confirm("本書已在目標書單內，是否確定要重複新增？")) {
-                handleDetailModalVisible(false); 
-                setBookTitle(data.title||''); 
-                setBookISBN(data.isbn||''); 
-                //setBookPubyear(data.pubyear||''); 
-                setBookMarcId(data.sid||0); 
-            } 
-        }else{ 
-            // Code logic goes here
-            handleDetailModalVisible(false); 
-            setBookTitle(data.title||''); 
-            setBookISBN(data.isbn||''); 
-            //setBookPubyear(data.pubyear||''); 
-            setBookMarcId(data.sid||0); 
-        } 
-    }; 
-    const handleAddInput = () => { 
-        const newInputs = [...inputs, { key: inputs.length, value: '' }];
-        setInputs(newInputs); 
-        setInputCnts(inputCnts+1);
-    };
-
-    const handleDelInput = (key) => { 
-      console.log("key",key);
-      const newInputs = inputs.filter(input => input.key !== key); 
-      setInputs(newInputs);
-    };
-    
-
-    const handleInputChange = (key, value) => {
-        const newInputs = inputs.map(input => {
-        if (input.key === key) {
-            return { ...input, value };
-        }
-        return input;
-        });
-        setInputs(newInputs); 
-    };
- 
-    
-
-    const getGPTData = async () => { 
-        setSeconds(0);
-        handleSpinModalVisible(true);
-        setGPTRun(1); 
-        let ChatGPT = await getChatGPT(sdgsId,BookMarcId); 
-        if(Boolean(ChatGPT.success)){
-            console.info("  reasons:", ChatGPT.reasons); 
-            setReasons(ChatGPT.reasons||'');
-            //setShare(ChatGPT.share||'0');
-            //setIsShow(ChatGPT.isshow||'0');
-            if(ChatGPT.extended !== null){
-                const newInputs = []; 
-                ChatGPT.extended.map((question,index) => { 
-                    newInputs.push({ key:index, value: question }); 
-                })
-                setInputs(newInputs);
-                setInputCnts(newInputs.length);
-            }
-        }
-        setSeconds(20);
-        setGPTRun(0);
-        handleSpinModalVisible(false);
-        setSeconds(0);
-    }
-
-    const handleSubmit = () => {
-        console.log("handleSubmit");
-        if (formRef.current) {
-            formRef.current?.validateFields().then((values) => {
-                onFinishNext(values);
-            });
-        }
-    };
- 
-    const onSubmit = async (values: SDGsBooksItem) => {
+    const sendSDGsBooks = async (values: SDGsBooksItem) => { 
         values.id = id; 
         values.sdgsId = sdgsId; 
         values.title = BookTitle;
@@ -218,12 +117,13 @@ const BookEditForm: React.FC<{}> = (props: any) => {
         values.reasons = Reasons;
         values.share = Share;
         values.isshow = IsShow; 
+        values.source = Source;
         let extended = "";
         inputs.map((input ,index) => {
             if(index===0){
                 extended = input.value  ;
             }else{
-                extended += "^A^"+ input.value ;
+                extended += "^Z"+ input.value ;
             } 
         });
         values.extended = extended;
@@ -244,28 +144,296 @@ const BookEditForm: React.FC<{}> = (props: any) => {
             hide();
             message.error("修改失敗請重試！");
             return false;
-        }
+        }  
     }
  
+    const setUseShare = async() => {  
+        handleShareKBDataModalVisible(false); 
+        if (await sendSDGsBooks(booksItem)) {
+            if(isReload){ 
+                setBookTitle(''); 
+                setBookISBN(''); 
+                setReasons('');
+                setShare('1');
+                setIsShow('0');
+                setBookMarcId(0);
+                setReadOnly("0");
+                const newInputs = [{ key: 0, value: '' }];
+                setInputs(newInputs); 
+                setInputCnts(0); 
+            }else{
+                if(id===0){ 
+                    handleFinish(); 
+                }else{
+                    handleRefresh(); 
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    const onFinishNext = async (values: SDGsBooksItem) => { 
+        if (BookTitle===''){
+            alert("請輸入題名");
+            return;
+        }else if(BookISBN===''){
+            alert("請輸入ISBN");
+            return;
+        }else if(Reasons===''){
+            alert("請輸入推薦緣由");
+            return;
+        }else if(inputs[0].value===''){
+            alert("請輸入延伸討論");
+            return; 
+        }else{
+            setReload(true);
+            setSDGsBooksItem(values);
+            if(Share === '1' && id===0){
+                handleShareKBDataModalVisible(true);   
+            }else{
+                //setUseShare();
+                if (await sendSDGsBooks(values))  {
+                    setBookTitle(''); 
+                    setBookISBN(''); 
+                    setReasons('');
+                    setShare('1');
+                    setShowShare('1');
+                    setShareDisable("0");  
+                    setReadOnly("0");
+                    setIsShow('1');
+                    setBookMarcId(0); 
+                    const newInputs = [{ key: 0, value: '' }];
+                    setInputs(newInputs); 
+                    setInputCnts(0);
+                } 
+            }
+            /*
+            if (await onSubmit(values))  {
+                setBookTitle(''); 
+                setBookISBN(''); 
+                setReasons('');
+                setShare('0');
+                setIsShow('0');
+                setBookMarcId(0);
+                const newInputs = [{ key: 0, value: '' }];
+                setInputs(newInputs); 
+                setInputCnts(0);
+            } 
+            */
+        } 
+    };
     
+    const handleSubmit = () => { 
+        if (formRef.current) {
+            formRef.current?.validateFields().then((values) => {
+                onFinishNext(values);
+            });
+        }
+    };
+  
+    const onFinish = async (values: SDGsBooksItem) => { 
+        setReload(false);
+        setSDGsBooksItem(values);
+        if(Share === '1'&& id===0 ){
+            handleShareKBDataModalVisible(true);     
+        }else{
+            //setUseShare();
+            if (await sendSDGsBooks(values)) {
+                if(id===0){ 
+                    handleFinish(); 
+                }else{
+                    handleRefresh(); 
+                }
+            }  
+        }
+       
+        /*
+        if (await onSubmit(values)) {
+            if(id===0){ 
+                handleFinish(); 
+            }else{
+                handleRefresh(); 
+            }
+        } 
+        */
+    };
+ 
+       
+    const setRecord = (data: any) => { 
+        if(data.flag !== "0"){
+            if(confirm("本書已在目標書單內，是否確定要重複新增？")) {
+                handleDetailModalVisible(false); 
+                setBookTitle(data.title||''); 
+                setBookISBN(data.isbn||''); 
+                //setBookPubyear(data.pubyear||''); 
+                setBookMarcId(data.sid||0); 
+                setReasons(''); 
+                setReadOnly("0");
+                setShare('1');
+                setShowShare('1');
+                setShareDisable("0");
+                setIsShow('1'); 
+                const newInputs = [{ key: 0, value: '' }];
+                setInputs(newInputs); 
+                setInputCnts(0);
+            } 
+        }else{ 
+            // Code logic goes here
+            handleDetailModalVisible(false); 
+            setBookTitle(data.title||''); 
+            setBookISBN(data.isbn||''); 
+            //setBookPubyear(data.pubyear||''); 
+            setBookMarcId(data.sid||0); 
+            setReasons(''); 
+            setReadOnly("0");
+            setShare('1');
+            setShowShare('1');
+            setShareDisable("0");
+            setIsShow('1'); 
+            const newInputs = [{ key: 0, value: '' }];
+            setInputs(newInputs); 
+            setInputCnts(0);
+        } 
+    }; 
+    const handleAddInput = (key) => { 
+        console.info("handleAddInput inputCnts===>",key);
+        const newInputs = [...inputs, { key: inputs.length, value: '' }];
+        setInputs(newInputs); 
+        setInputCnts(inputCnts+1);
+    };
+
+    const handleDelInput = (key) => {   
+      const newInputs = inputs.filter(input => input.key !== key); 
+      console.info("handleDelInput newInputs===>",newInputs);
+      setInputs(newInputs);
+    };
+    
+
+    const handleInputChange = (key, value) => {
+        const newInputs = inputs.map(input => {
+        if (input.key === key) {
+            return { ...input, value };
+        }
+        return input;
+        });
+        setInputs(newInputs); 
+    };
+  
+
+    const handleGPTData = (item:any,share:string) => {  
+        console.info("reasons=====>", item.reasons); 
+        console.info("source=====>", item.source); 
+        console.info("share=====>", share);  
+        setSource(item.source||'');
+        setReasons( item.reasons||''); 
+        if( item.extended !== null){
+            const newInputs = []; 
+            item.extended.map((question,index) => { 
+                newInputs.push({ key:index, value: question }); 
+            })
+            setInputs(newInputs);
+            setInputCnts(newInputs.length);
+            if(newInputs.length>0){ 
+                setShare(share); 
+                setShareDisable("1");  
+                if(share === '0'){
+                    setReadOnly("1");
+                    setShowShare('0');
+                }else{
+                    setReadOnly("0");
+                    setShowShare('1');
+                }
+            } 
+        } 
+    };
+    const  onCancelForm=()=> { 
+        setBookTitle(''); 
+        setBookISBN(''); 
+        setReasons(''); 
+        setReadOnly("0");
+        setShare('1');
+        setShowShare('1');
+        setShareDisable("0");
+        setIsShow('1');
+        setBookMarcId(0); 
+        const newInputs = [{ key: 0, value: '' }];
+        setInputs(newInputs); 
+        setInputCnts(0);
+        onCancel();
+    }
+    const getGPTData = async () => { 
+        setSeconds(0);
+        handleSpinModalVisible(true);
+        setGPTRun(1); 
+        let ChatGPT = await getChatGPT(sdgsId,BookMarcId,0);  
+        console.info( "ChatGPT.data.length ===>", ChatGPT.data.length); 
+        console.info( "ChatGPT.data   ===>", ChatGPT.data ); 
+        console.info( "ChatGPT.isKB",ChatGPT.isKB); 
+        setGPTData(ChatGPT);
+        if(Boolean(ChatGPT.success)){
+            if(Boolean(ChatGPT.isKB)){
+                handleKBModalVisible(true);
+            }else if(!Boolean(ChatGPT.isKB) && ChatGPT.data.length>0){
+                handleGPTData(ChatGPT.data[0],"1");
+            }
+        }
+        setSeconds(20);
+        setGPTRun(0);
+        handleSpinModalVisible(false);
+        setSeconds(0); 
+    }
+
+    const setUseType = async (useType: any) => {
+        console.log("useType",useType);
+        handleKBModalVisible(false);
+        if(useType){
+            setSeconds(0);
+            handleSpinModalVisible(true);
+            setGPTRun(1); 
+            let ChatGPT =  await getChatGPT(sdgsId,BookMarcId,1);   
+            setGPTData(ChatGPT); 
+            console.info( "ChatGPT  == ", ChatGPT ); 
+            console.info( "ChatGPT.success==",ChatGPT.success); 
+           if(Boolean(ChatGPT.success) && ChatGPT.data.length>0){
+                console.info( "GPTData",GPTData); 
+                handleGPTData(ChatGPT.data[0],"1"); 
+            }
+            setSeconds(20);
+            setGPTRun(0);
+            handleSpinModalVisible(false);
+            setSeconds(0); 
+        }else{
+            handleKBDataModalVisible(true);
+        }
+    }
+
+    
+    const setKBRecord = (KBRecord: any ) => {
+        console.log("KBRecord",KBRecord);  
+        handleGPTData(KBRecord,"0");  
+        handleKBDataModalVisible(false);
+        
+     
+    } 
+
+
 
     return (
         <> 
-        <Modal destroyOnClose title="編輯書單" visible={editModalVisible} onCancel={() => onCancel()} width={1000} footer={null}>
-        <Divider /> 
-        <PageContainer 
-            extra={[
-                id === 0 && ( <>
-                    <Button
-                        type="primary" 
-                        onClick={() => {
-                        handleDetailModalVisible(true); 
-                        }}
-                    >
-                        查詢館藏
-                    </Button> 
-                    </>
-                )]}>
+        <Modal destroyOnClose title={id !==0 ?"編輯書單":"新增書單"} visible={editModalVisible} onCancel={() => onCancelForm()} width={1000} footer={null}>
+        <Divider />  
+        {id === 0 && ( <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <Button 
+            type="primary" 
+            onClick={() => {
+            handleDetailModalVisible(true); 
+            }}
+        >
+            查詢館藏
+        </Button></div>
+        )}  
         {sdgsId !== 0  && (BookTitle !== '' || id===0) ? (
             <Form<SDGsBooksItem>
             {...formItemLayout}
@@ -276,28 +444,42 @@ const BookEditForm: React.FC<{}> = (props: any) => {
             labelWrap
             >
             <h2>書籍資訊</h2> 
-            <Form.Item 
-                label="* 題名" 
-                rules={[{ required: true, message: '請輸入題名' }]} >
-                <Input value={BookTitle||''}   required
-                    onChange={(e) => { 
-                        handleBTitleChange(e.target.value);
-                    }}
-                /> 
-            </Form.Item> 
-            <Form.Item 
-                label="* ISBN" 
-                rules={[{ required: true, message: '請輸入ISBN' }]} >
-                <Input value={BookISBN||''}   required
-                    onChange={(e) => { 
-                        handleBISBNChange(e.target.value);
-                    }}
-                /> 
-            </Form.Item>  
-           
-        
-            <h2>推薦資訊及討論</h2>
-          
+            {id !==0 ?
+            (<>
+                <Form.Item 
+                    label="* 題名" 
+                    rules={[{ required: true, message: '請輸入題名' }]} >
+                    <Input value={BookTitle||''}   required
+                        onChange={(e) => { 
+                            handleBTitleChange(e.target.value);
+                        }}
+                    /> 
+                </Form.Item> 
+                <Form.Item 
+                    label="* ISBN" 
+                    rules={[{ required: true, message: '請輸入ISBN' }]} >
+                    <Input value={BookISBN||''}   required
+                        onChange={(e) => { 
+                            handleBISBNChange(e.target.value);
+                        }}
+                    /> 
+                </Form.Item>  
+            </> ): (<>
+                <Form.Item 
+                    label="* 題名" 
+                    rules={[{ required: true, message: '請輸入題名' }]} >
+                    {BookTitle||''}
+                </Form.Item> 
+                <Form.Item 
+                    label="* ISBN" 
+                    rules={[{ required: true, message: '請輸入ISBN' }]} >
+                    {BookISBN||''} 
+                </Form.Item> </> 
+            )}
+            <h2>推薦資訊及討論</h2> 
+            <h4> 
+            當使用「AI智能生成」服務所編輯完成的書目，將會自動分享至我們的知識庫中，達到共建共享的目標。
+            </h4> 
             <Button
                 className="aibutton"  
                 onClick={() => {
@@ -318,6 +500,8 @@ const BookEditForm: React.FC<{}> = (props: any) => {
             <Input.TextArea  
                 rows={5}
                 value={Reasons||''}  required
+                readOnly={ReadOnly==='1'}
+                style={{backgroundColor:ReadOnly==='1'? '#f0f0f0':'#ffffff'}}
                 onChange={(e) => { 
                     setReasons(e.target.value);
                 }}/>
@@ -331,11 +515,12 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 <Input
                     key={input.key}
                     value={input.value}
+                    readOnly={ReadOnly==='1'}
                     onChange={e => handleInputChange(input.key, e.target.value)}
-                    style={{ marginBottom: 10,width: '90%'}}
+                    style={{backgroundColor:ReadOnly==='1'? '#f0f0f0':'#ffffff', marginBottom: 10,width: '90%'}}
                 /> 
-                <Button  style={{  margin: '0 0 0 10px'}}
-                    onClick={handleAddInput}>
+                <Button  style={{  margin: '0 0 0 10px'}} 
+                    onClick={() => ReadOnly==='1'? null:handleAddInput(input.key) }>
                     <PlusOutlined   />
                 </Button></Row>
                 </>))||
@@ -344,18 +529,18 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 <Input
                     key={input.key}
                     value={input.value}
+                    readOnly={ReadOnly==='1'}
                     onChange={e => handleInputChange(input.key, e.target.value)}
-                    style={{ marginBottom: 10,width: '90%' }}
+                    style={{backgroundColor:ReadOnly==='1'? '#f0f0f0':'#ffffff', marginBottom: 10,width: '90%' }}
                 />
-                <Button  style={{  margin: '0 0 0 10px'}}
-                        onClick={() => handleDelInput(input.key)}>
+                <Button  style={{  margin: '0 0 0 10px'}} 
+                        onClick={() => ReadOnly==='1'? null:handleDelInput(input.key)}>
                     <CloseOutlined   />
                 </Button>
                 </Row></>))  
             ))}
           
-            </Form.Item>  
-            
+            </Form.Item>   
             <Row>
                 <Col span={3} />
                 <Col span={21}>
@@ -366,14 +551,14 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                             } else {
                                 setIsShow("0"); 
                             }
-                        }} 
-                        defaultChecked={IsShow === '1' ? true : false} 
+                        }}  
+                        defaultChecked={IsShow === '1' ? true : false}  
                     >
                         前台顯示
                     </Checkbox>
                 </Col> 
-            </Row> 
-            <Row>
+            </Row>  
+            <Row style={{display :(ShowShare === '0' || id !== 0 ) ? 'none': '' }}>
                 <Col span={3} />
                 <Col span={21}>
                     <Checkbox 
@@ -384,16 +569,18 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                                 setShare("0"); 
                             }
                         }} 
+                        disabled={ShareDisable === '1' ? true : false}
                         defaultChecked={Share === '1' ? true : false}
+                        checked={Share === '1' ? true : false}
                     >
                         本館願意將資料分享至資源共享庫
                     </Checkbox> 
                 </Col>  
-            </Row> 
+            </Row>
             <Divider />
             <Form.Item style={{ textAlign: "center" }}>
                 <Space>
-                <Button type="default" onClick={() =>onCancel() }>
+                <Button type="default" onClick={() =>onCancelForm() }>
                     關閉
                 </Button>
                 <Button type="primary" htmlType="submit">
@@ -420,10 +607,24 @@ const BookEditForm: React.FC<{}> = (props: any) => {
             modalVisible={detailModalVisible}
             id={id}
         /></>)}
+        <KBConfirmForm setUseType={setUseType} modalVisible={kbmodalVisible}   
+            onCancel={() => {
+                handleKBModalVisible(false);   
+            }}
+        />
+        <KBDataForm GPTData={GPTData} setKBRecord={setKBRecord} modalVisible={kbdatamodalVisible}   
+            onCancel={() => {
+                handleKBDataModalVisible(false);   
+            }}
+        /> 
+        <ShareKBConfirmForm id={id} setUseShare={setUseShare} modalVisible={sharekbdatamodalVisible}   
+            onCancel={() => {
+                handleShareKBDataModalVisible(false);   
+            }}
+        />
         {gptRun !== 0 && ( <> 
-            <SpinForm seconds={seconds} modalVisible={spinmodalVisible}/>
-        </>)}
-        </PageContainer>
+            <SpinForm seconds={seconds} modalVisible={spinmodalVisible}/> 
+        </>)} 
     </Modal></>
     );
 };

@@ -1,73 +1,93 @@
+import request from 'umi-request';   
 import React, { useEffect, useRef, useState } from "react";
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { history } from "umi";
-import request from 'umi-request'; 
-import {  addSDGsKeyword } from "../service"; 
 import { ProTable } from '@ant-design/pro-components'; 
-import { PageContainer } from '@ant-design/pro-layout';
-import { Button, Divider, Form, Input,  message, Space,Radio } from "antd";
+import type {ActionType, ProColumns } from '@ant-design/pro-components';
+import { history } from "umi";
+import {  getSDGsKeywordById  ,addSDGsKeyword }  from "../../pages/service"; 
+import { Button, Divider, Modal,Form, Input,  message, Space,Radio } from "antd";
 import moment from "moment";
 import { FormInstance } from "antd/lib/form";
-import { SDGsItems } from "../SDGs/data";
+import { SDGsItems }  from "../../pages/SDGs/data"; 
 
 const formRef = React.createRef<FormInstance>();
 
+ 
 const formItemLayout = {
-  labelCol: { span: 3 }
-};
-
-const AddForm: React.FC<{}> = (props: any) => {
-    let querystring = window.location.search.replace('?', '');
-    let params = querystring.split('&');
-    let sdgsId = 0;
-    let id = 0;
-    let maincodeId = 1; 
-    params.map(param => {
-      var q = param.split('=');
-      if (q[0] === 'sdgsId') {
-        sdgsId = parseInt(q[1]);
-      }
-    }); 
+    labelCol: { span: 3 }
+  };
+  
+const KeyWordEditForm: React.FC<{}> = (props: any) => {
+    const { editModalVisible, onCancel,sdgsId,id,maincodeId,handleRefresh,handleFinish} = props;  
+    
+    console.info("sdgsId", sdgsId);
+    console.info("id", id); 
     const actionRef = useRef<ActionType>();
-    const [isshow, setIsshow] = useState<number>(1);  
+    const [isshow, setIsshow] = useState<number>(1);
+    const [initialValues, setInitialValues] = useState<any>({});
     const [kwTitle, setKWTitle] =useState('');  
-    const [breadcrumb, setData] = useState({});
     useEffect(() => {
-        setData({ items: [
-            {
-                title: 'SDGs 目標管理',
-            },
-            { 
-                title: <a href="../sdgs/">SDGs 目標列表</a>, 
-            },
-            { 
-                title: <a href={"../sdgs/sdgskeywd?sdgsId="+sdgsId}>關鍵字</a>, 
-            },
-            { 
-                title: "新增關鍵字", 
-            },
-        ],});
-    }, []);
+        const fetchData = async () => {
+            if (id !== 0) {
+                let items = await getSDGsKeywordById(id); 
+                if (items !== undefined) {  
+                    let insert_muser_name =  items.muser.filter(d => (d.id === items.data.insert_muser_id)).map((item) => { 
+                        return item.name; 
+                    });
+                    let update_muser_name =  items.muser.filter(d => (d.id === items.data.insert_muser_id)).map((item) => { 
+                         return item.name;
+                    }); 
+                 
+                    setInitialValues({
+                        id: items.data.id,
+                        title: items.data.title,
+                        isshow: items.data.isshow,
+                        insert_muser_name: insert_muser_name,
+                        insert_date: moment(items.data.insert_date).format("YYYY-MM-DD HH:mm"),
+                        update_muser_name: update_muser_name,
+                        update_date: moment(items.data.update_date).format("YYYY-MM-DD HH:mm"),
+                    });
+                    setKWTitle(items.data.title);
+                    setIsshow(parseInt(items.data.isshow));
+                }; 
+            }else{
+                setInitialValues({ 
+                    title: "",
+                    isshow: 1, 
+                }); 
+                setKWTitle("");
+                setIsshow(1);
+            }
+        };
+        fetchData();
+    }, [id]);
+  
+    
+
+    const title = "編輯 SDGs "+sdgsId+"  關鍵字";
+
+    const onFinish = async (values: SDGsItems) => {
+        console.info("onFinish", values);
+        if (await onSubmit(values)) {
+            if(id===0){ 
+                handleFinish(); 
+            }else{
+                handleRefresh(); 
+            }
+        }
+    };
 
     const handleKWChange = (value) => { 
         console.log("value",value);
         setKWTitle(value); 
     };
     
-   
-    const title = "SDGs "+sdgsId+"  關鍵字";
-
-    const onFinish = async (values: SDGsItems) => {
-        console.info("onFinish", values); 
-        if (await onSubmit(values)) history.push("/sdgs/sdgskeywd?sdgsId="+sdgsId);
-    };
 
     const onSubmit = async (values: SDGsItems) => {
         values.id = id; 
         values.sdgsId = sdgsId;
         values.maincodeId = maincodeId;
-        values.title = kwTitle; 
-        values.isshow = isshow; 
+        values.title = kwTitle;
+        values.isshow = isshow;
         const hide = message.loading("正在配置");
         try {
             const result = await addSDGsKeyword(values);
@@ -132,16 +152,12 @@ const AddForm: React.FC<{}> = (props: any) => {
         },
       ];
 
+
     return (
         <>
-        <PageContainer
-            header={{
-            title: title, 
-            breadcrumb:  breadcrumb ,
-            }} 
-        >
-        {sdgsId !== 0 ? (
-        <Form<SDGsItems>
+        <Modal destroyOnClose title={title} visible={editModalVisible} onCancel={() => onCancel()} width={1000} footer={null}>
+        {sdgsId !== 0   ? (
+            <Form<SDGsItems>
             {...formItemLayout}
             style={{ backgroundColor: "white", padding: "20px" }}
             ref={formRef}
@@ -151,12 +167,12 @@ const AddForm: React.FC<{}> = (props: any) => {
             >
             <h2>關鍵字</h2>
             <Form.Item label="* 關鍵字" >
-                <Input value={kwTitle||''}   required
-                    onChange={(e) => { 
-                        handleKWChange(e.target.value);
-                    }}
-                /> 
-            </Form.Item>   
+            <Input value={kwTitle||''}   required
+                onChange={(e) => { 
+                    handleKWChange(e.target.value);
+                }}
+            /> 
+            </Form.Item>
             <Form.Item label="* 前台顯示" >
             <Radio.Group
               onChange={(e) => {
@@ -167,18 +183,31 @@ const AddForm: React.FC<{}> = (props: any) => {
               <Radio value={0}>否</Radio>
               <Radio value={1}>是</Radio>
             </Radio.Group>
-            </Form.Item> 
+            </Form.Item>
+            <Divider />
+            {(id!==0) ? ( <>
+                <h2>新增/修改記錄</h2>
+                <Space split={<Divider type="vertical" />} size={50}>
+                    {`新增人員：` + initialValues.insert_muser_name}
+                    {`新增時間：` + initialValues.insert_date}
+                    {`修改人員：` + initialValues.update_muser_name}
+                    {`修改時間：` + initialValues.update_date}
+                </Space>
+                <Divider /></>
+            ) : (
+                <></>
+            )} 
             <Form.Item style={{ textAlign: "center" }}>
                 <Space>
-                <Button type="default" onClick={() => history.push("/sdgs/sdgskeywd?sdgsId="+sdgsId)}>
-                    回上一頁
+                <Button type="default" onClick={() => onCancel()}>
+                 關閉
                 </Button>
                 <Button type="primary" htmlType="submit">
                     送出
                 </Button>
                 </Space>
             </Form.Item>
-            <Divider />
+            {(id===0) && ( <>
             <h2>讀者自訂關鍵字參考</h2>
             <ProTable<SDGsItems>
                 columns={columns}
@@ -212,14 +241,18 @@ const AddForm: React.FC<{}> = (props: any) => {
                     onChange: (page) => console.log(page),
                 }}
                 dateFormatter="string"  
-            /> 
-            <Divider />
+            /> </>
+            )}
         </Form>
         ) : (
             <></>
         )} 
-        </PageContainer></>
+        </Modal></>
     );
 };
 
-export default AddForm;
+export default KeyWordEditForm;
+
+ 
+
+ 

@@ -3,14 +3,14 @@ import { ProTable } from '@ant-design/pro-components';
 import request from 'umi-request'; 
 import React, { useEffect, useRef, useState } from "react";
 import {Tab, DetailForm } from '../../components/SDGs'; 
-import {  getSDGs,delSDGsItem  } from "../service";
-import { Button,  Space, message,DatePicker } from "antd";
-import { history } from "umi";
-import { PlusOutlined } from "@ant-design/icons";
+import {  getSDGs,delSDGsItem,addSDGsItem } from "../service";
+import { DownOutlined,PlusOutlined,UploadOutlined } from '@ant-design/icons';
+import { Menu, Dropdown, Button,  Space, message,DatePicker } from "antd";
 import { SDGsItems } from "./data";
 import { PageContainer } from '@ant-design/pro-layout';
+import ExportExcelButton from '../../components/SDGs/ExportExcelButton'; 
+import { ActionEditForm } from '../../components/SDGs'; 
 
- 
 const { RangePicker } = DatePicker;
 
 const SDGsTalk: React.FC<{}>  = () => {
@@ -25,13 +25,23 @@ const SDGsTalk: React.FC<{}>  = () => {
     if (q[0] === 'sdgsId') {
         sdgsId = parseInt(q[1]);
     }  
-  }); 
-  const actionRef = useRef<ActionType>(); 
+  });
   const [id, setId] = useState<number>(0);
-
   const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
     false
-  );
+  ); 
+  const [editModalVisible, handleEditModalVisible] = useState<boolean>(
+    false
+  ); 
+  const actionRef = useRef<ActionType>(); 
+  const [tableData, setTableData] = useState({});  
+  const excelHeaders = [
+    { title: '項目', key: 'title' , type: 'string', width: 80}, 
+    { title: '資料來源', key: 'source', type: 'string' , width: 15}, 
+    { title: '前台顯示', key: 'source', type: 'y&n0'},  
+    { title: '新增時間', key: 'insert_date', type: 'date', width: 20 }, 
+  ];
+  
 
   const columns: ProColumns<SDGsItems>[] = [
     {
@@ -108,12 +118,39 @@ const SDGsTalk: React.FC<{}>  = () => {
           >
             詳細
           </Button>
+          <Button
+              type="default"
+              onClick={async () => {
+                if (confirm("確定要修改嗎？")) {
+                  let isshow = (record.isshow === 1) ? "0" : "1"  ;
+                  record.isshow = isshow;  
+                  const hide = message.loading("正在配置");
+                  try {
+                      const result = await addSDGsItem(record); 
+                      hide();
+    
+                      if (result !== null && result.success) {
+                        message.success("修改成功");
+                        if (actionRef.current) actionRef.current.reload();
+                      } else {
+                        message.success("修改失敗請重試！");
+                      }
+                    } catch (error) {
+                      message.success("修改失敗請重試！");
+                      hide();
+                    } 
+                  }
+              }}
+            >
+            {record.isshow === 1 ? "隱藏" : "顯示" } 
+            </Button>
           {(record.source==='本館') && (
             <> 
             <Button
               type="default"
               onClick={() => {
-                history.push("/sdgstalk/edit?sdgsId="+sdgsId+"&id=" + record.id);
+                setId(record.id);
+                handleEditModalVisible(true);
               }}
             >
               修改
@@ -179,7 +216,32 @@ const SDGsTalk: React.FC<{}>  = () => {
   if(SDGsData!==undefined && SDGsData.data!==undefined && SDGsData.data.length>0 && sdgsId <= SDGsData.data.length  ){
     title += SDGsData.data[sdgsId-1].title;
   }
+  const handleRefresh = () => { 
+    setId(0);
+    handleEditModalVisible(false);
+    if (actionRef.current) actionRef.current.reload();
+  };
 
+  const handleFinish = () => {
+    setId(0);
+    handleEditModalVisible(false);
+    window.location.reload();
+  };
+
+
+  const menu = (
+    <Menu>
+     <Menu.Item key="1">
+        <ExportExcelButton data={tableData} headers={excelHeaders}/> 
+      </Menu.Item>
+    
+    </Menu>
+  );
+  /*
+    <Menu.Item key="2">
+        <Button type="primary"><UploadOutlined />匯入</Button>
+      </Menu.Item> 
+  */
 
   return (
     <PageContainer
@@ -191,11 +253,17 @@ const SDGsTalk: React.FC<{}>  = () => {
         <Button
           type="primary"
           onClick={() => {
-            history.push("/sdgstalk/edit?sdgsId="+sdgsId+"&id=0");
+            setId(0);
+            handleEditModalVisible(true);
           }}
         >
           <PlusOutlined /> 新建
-        </Button>
+        </Button>  
+        <Dropdown overlay={menu}>
+          <Button>
+            工具 <DownOutlined />
+          </Button>
+        </Dropdown>  
       </>)]}
     >
     <Tab 
@@ -213,6 +281,22 @@ const SDGsTalk: React.FC<{}>  = () => {
           data: SDGsItems[];
         }>('../../hysdgs/getSDGsItem', {
           params,
+        }).then((response) => {
+          if (response.data !== undefined) {
+            setTableData(response.data);
+            return {
+              data: response.data,
+              muser: response.muser,
+              success: response.success,
+              total: response.total,
+            };
+          } else {
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
+          }
         });
       }}
        
@@ -253,6 +337,18 @@ const SDGsTalk: React.FC<{}>  = () => {
       id={id}
     /></>)} 
     </Tab>  
+    <ActionEditForm 
+      onCancel={() => {
+          handleEditModalVisible(false);   
+          setId(0);
+      }}  
+      sdgsId = {sdgsId}
+      maincodeId = {maincodeId}
+      editModalVisible={editModalVisible}  
+      id={id} 
+      handleRefresh={handleRefresh}
+      handleFinish={handleFinish}
+    />
   </PageContainer>);
 };
 export default SDGsTalk;
