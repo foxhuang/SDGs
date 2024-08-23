@@ -12,6 +12,10 @@ const BookViewForm: React.FC<{}> = (props: any) => {
     const [IsShow, setIsShow] =useState('0');   
     const [Source, setSource] = useState('');
     const [Extended, setExtendede] = useState(''); 
+    const [Readable, setReadable] = useState(''); 
+    const [Recommender, setRecommender] = useState(''); 
+
+    
   
     useEffect(() => {  
         if(id!==0){
@@ -24,6 +28,8 @@ const BookViewForm: React.FC<{}> = (props: any) => {
                     setReasons(sdgsbook.data.reasons||''); 
                     setIsShow(''+sdgsbook.data.isshow||'0');
                     setExtendede(sdgsbook.data.extended||'');
+                    setReadable(sdgsbook.data.readable||'');
+                    setRecommender(sdgsbook.data.recommender||'');
                 };  
             };  
             fetchData();
@@ -50,12 +56,22 @@ const BookViewForm: React.FC<{}> = (props: any) => {
             <Col span="6">前台顯示：</Col>
             <Col span="18">{parseInt(IsShow) === 1 ?"是":"否"}</Col>
           </Row>
+          <Divider />
+          <Row gutter={[48, 24]}>
+            <Col span="6">推薦者：</Col>
+            <Col span="18">{Recommender}</Col>
+          </Row> 
+          <Divider /> 
+          <Row gutter={[48, 24]}>
+            <Col span="6">對象：</Col>
+            <Col span="18">{Readable}</Col>
+          </Row> 
           <Divider /> 
           <Row gutter={[48, 24]}>
             <Col span="6">資料來源：</Col>
             <Col span="18">{Source}</Col>
           </Row> 
-          <Divider /> 
+          <Divider /> 	   
           <Row gutter={[48, 24]}>
             <Col span="6"> 推薦緣由：</Col>
             <Col span="18">{Reasons}</Col>

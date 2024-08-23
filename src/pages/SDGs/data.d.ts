@@ -315,6 +315,8 @@ export type SDGsBooksItem = {
   maincodeId: number;
   reasons:string,
   extended:string;
+  readable:string;
+  recommender:string;
   flag:string;
   share:string;
 };

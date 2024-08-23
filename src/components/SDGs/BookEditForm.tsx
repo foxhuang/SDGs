@@ -23,6 +23,9 @@ const BookEditForm: React.FC<{}> = (props: any) => {
     const [ReadOnly, setReadOnly] =useState('0');  
     const [Share, setShare] =useState('1');  
     const [Source, setSource] =useState('');  
+    const [Readable, setReadable] =useState('');  
+    const [Recommender, setRecommender] =useState('');  
+ 
     const [ShowShare, setShowShare] =useState('1');  
     const [ShareDisable, setShareDisable] =useState('0');   
     const [IsShow, setIsShow] =useState('0');   
@@ -118,6 +121,8 @@ const BookEditForm: React.FC<{}> = (props: any) => {
         values.share = Share;
         values.isshow = IsShow; 
         values.source = Source;
+        values.readable = Readable;
+        values.recommender = Recommender;
         let extended = "";
         inputs.map((input ,index) => {
             if(index===0){
@@ -155,9 +160,10 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 setBookISBN(''); 
                 setReasons('');
                 setShare('1');
-                setIsShow('0');
+                setIsShow('1');
                 setBookMarcId(0);
                 setReadOnly("0");
+                setShareDisable("0");  
                 const newInputs = [{ key: 0, value: '' }];
                 setInputs(newInputs); 
                 setInputCnts(0); 
@@ -325,9 +331,13 @@ const BookEditForm: React.FC<{}> = (props: any) => {
     const handleGPTData = (item:any,share:string) => {  
         console.info("reasons=====>", item.reasons); 
         console.info("source=====>", item.source); 
+        console.info("readable=====>", item.readable); 
+        console.info("recommender=====>", item.recommender); 
         console.info("share=====>", share);  
         setSource(item.source||'');
         setReasons( item.reasons||''); 
+        setReadable(item.readable||'');
+        setRecommender(item.recommender||'');
         if( item.extended !== null){
             const newInputs = []; 
             item.extended.map((question,index) => { 
