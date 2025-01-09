@@ -27,12 +27,6 @@ export default defineConfig({
       path: '/sdgs/sdgsbooks',
       component: './SDGs/sdgsbooks',
       layout: false, 
-    }, 
-    {
-      name: ' SDGs SDGsBooks EDIT  ',
-      path: '/sdgsbooks/edit',
-      component: './SDGsBooks/edit',
-      layout: false, 
     },       
     {
       name: ' SDGs SDGsAction EDIT  ',
@@ -57,13 +51,7 @@ export default defineConfig({
       path: '/sdgskeyword/add',
       component: './SDGsKeyword/add',
       layout: false, 
-    },  
-    {
-      name: ' SDGs SDGsItem  ',
-      path: '/sdgs/sdgsitem',
-      component: './SDGs/sdgsitem',
-      layout: false, 
-    },  
+    },    
     {
       name: ' SDGs SDGsAction  ',
       path: '/sdgs/sdgsaction',
@@ -87,11 +75,22 @@ export default defineConfig({
       path: '/sdgs/fileupload',
       component: './SDGs/fileupload',
       layout: false, 
-    }  
-    
+    }   ,  
+    {
+      name: ' SDGs bagupload  ',
+      path: '/sdgs/bagupload',
+      component: './SDGs/bagupload',
+      layout: false, 
+    } , 
+    {
+      name: ' SDGs import ',
+      path: '/import',
+      component: './Import',
+      layout: false, 
+    } 
   ],
   npmClient: 'npm',
-  base:'/HyLibMain/hylibsdgs/',
-  publicPath:'/HyLibMain/hylibsdgs/',
+  base:'/HyLibMain2/hylibsdgs/',
+  publicPath:'/HyLibMain2/hylibsdgs/',
 });
 

@@ -68,6 +68,19 @@ export async function delSDGsItem(id?: number) {
 
 
 
+export async function getSDGsBooksMarcByMarcId(marcId?: number,sdgsId?: number) { 
+    try {
+        const response = await request('../../hysdgs/getSDGsBooksMarcByMarcId?marcId='+marcId+'&sdgsId='+sdgsId, {
+            method: 'POST', 
+        }); 
+        console.log(response);
+        return response;
+    } catch (error) { 
+        console.error(error);
+    }
+    return null;
+}
+
 export async function addSDGsItem(values?: any) { 
     try {
         const response = await request('../../hysdgs/addSDGsItem', {

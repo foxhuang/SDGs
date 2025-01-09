@@ -319,6 +319,7 @@ export type SDGsBooksItem = {
   recommender:string;
   flag:string;
   share:string;
+  otherhiden:string;
 };
 
 type SDGsItems = {

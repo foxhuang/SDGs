@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FormInstance } from "antd/lib/form"; 
 import { PlusOutlined ,CloseOutlined  } from '@ant-design/icons';
 import { Button, Divider,Modal, Form, Input,  message, Space,Row,Checkbox,Col } from "antd";
-import {  getSDGsBooksById  ,addSDGsBooks,getChatGPT } from "../../pages/service"; 
+import {  getSDGsBooksById  ,addSDGsBooks,getChatGPT,getSDGsBooksMarcByMarcId } from "../../pages/service"; 
 import { QueryForm,SpinForm,KBConfirmForm ,KBDataForm,ShareKBConfirmForm} from '../../components/SDGs';  
 import { SDGsBooksItem } from "../../pages/SDGs/data"; 
 import '../../pages/css/customButtonStyles.css';  
@@ -29,6 +29,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
     const [ShowShare, setShowShare] =useState('1');  
     const [ShareDisable, setShareDisable] =useState('0');   
     const [IsShow, setIsShow] =useState('0');   
+    const [IsShowOld, setIsShowOld] =useState('0');   
     const [BookMarcId, setBookMarcId] = useState(0);  
     const [inputs, setInputs] = useState([{ key: 0, value: '' }]);
     const [inputCnts, setInputCnts] = useState(0);  
@@ -71,6 +72,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                     setReadOnly("0");
                     setShowShare('0');
                     setIsShow(''+sdgsbook.data.isshow||'0');
+                    setIsShowOld(''+sdgsbook.data.isshow||'0');
                     if(sdgsbook.data.extended !== null){
                         const newInputs = []; 
                         sdgsbook.data.extended.split("^Z").map((question,index) => { 
@@ -92,6 +94,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 setShowShare('1');
                 setReadOnly("0");
                 setIsShow('1');
+                setIsShowOld('0');
                 setShareDisable('0');
                 setBookMarcId(0);
                 const newInputs = [{ key: 0, value: '' }];
@@ -134,16 +137,34 @@ const BookEditForm: React.FC<{}> = (props: any) => {
         values.extended = extended;
         const hide = message.loading("正在配置");
         try {
-            const result = await addSDGsBooks(values);
-            console.log(result);
-            hide();
+            let sendflag = 1;
+            console.info("IsShow",IsShow);
+            console.info("IsShowOld",IsShowOld); 
+            if(IsShowOld==='0' &&  IsShow==='1' ){
+                values.otherhiden = "1";
+                const rresult = await getSDGsBooksMarcByMarcId(BookMarcId,sdgsId);  
+                console.info("rresult",rresult);
+                if (rresult !== null && rresult.total >= 1) {  
+                    if (confirm("每筆書目於前台僅能顯示一則推薦資訊。確定要改為顯示此內容，並隱藏原有的推薦嗎？隱藏的項目可隨時於列表中再次設定顯示。")){
+                        sendflag = 1;
+                    }else{
+                        sendflag = 0;
+                    }
+                }
+            }
+            console.info("sendflag",sendflag);
+            if(sendflag===1){
+                const result = await addSDGsBooks(values);
+                console.log(result);
+                hide();
 
-            if (result !== null && result.success) {
-                message.success("修改成功");
-                return true;
-            } else {
-                message.success("修改失敗請重試！");
-                return false;
+                if (result !== null && result.success) {
+                    message.success("修改成功");
+                    return true;
+                } else {
+                    message.success("修改失敗請重試！");
+                    return false;
+                }
             }
         } catch (error) {
             hide();
@@ -161,6 +182,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 setReasons('');
                 setShare('1');
                 setIsShow('1');
+                setIsShowOld('0');
                 setBookMarcId(0);
                 setReadOnly("0");
                 setShareDisable("0");  
@@ -209,6 +231,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                     setShareDisable("0");  
                     setReadOnly("0");
                     setIsShow('1');
+                    setIsShowOld('0');
                     setBookMarcId(0); 
                     const newInputs = [{ key: 0, value: '' }];
                     setInputs(newInputs); 
@@ -281,6 +304,7 @@ const BookEditForm: React.FC<{}> = (props: any) => {
                 setShowShare('1');
                 setShareDisable("0");
                 setIsShow('1'); 
+                setIsShowOld('0');
                 const newInputs = [{ key: 0, value: '' }];
                 setInputs(newInputs); 
                 setInputCnts(0);
@@ -297,7 +321,8 @@ const BookEditForm: React.FC<{}> = (props: any) => {
             setShare('1');
             setShowShare('1');
             setShareDisable("0");
-            setIsShow('1'); 
+            setIsShow('1');  
+            setIsShowOld('0');
             const newInputs = [{ key: 0, value: '' }];
             setInputs(newInputs); 
             setInputCnts(0);
@@ -366,7 +391,8 @@ const BookEditForm: React.FC<{}> = (props: any) => {
         setShare('1');
         setShowShare('1');
         setShareDisable("0");
-        setIsShow('1');
+        setIsShow('1'); 
+        setIsShowOld('0');
         setBookMarcId(0); 
         const newInputs = [{ key: 0, value: '' }];
         setInputs(newInputs); 

@@ -4,7 +4,7 @@ import request from 'umi-request';
 import React, { useEffect, useRef, useState } from "react";
 import Tab from '../../components/SDGs/Tab'; 
 import ExportExcelButton from '../../components/SDGs/ExportExcelButton'; 
-import {  getSDGs,delSDGsBooksById,addSDGsBooks  } from "../service";
+import {  getSDGs,delSDGsBooksById,addSDGsBooks ,getSDGsBooksMarcByMarcId } from "../service";
 import { SDGsBooksItem } from "./data";
 import { PageContainer } from '@ant-design/pro-layout';
 import { BookListForm,BookViewForm,BookEditForm } from '../../components/SDGs'; 
@@ -222,11 +222,22 @@ const SDGsBooks: React.FC<{}>  = () => {
            <Button
               type="default"
               onClick={async () => {
-                if (confirm("確定要修改嗎？")) {
+                const hide = message.loading("正在配置");
+                let sendMsg = "確定要修改嗎？";
+                let otherhiden = "0";
+                try { 
+                if(record.isshow===0){
+                  const rresult = await getSDGsBooksMarcByMarcId(record.marcId,record.sdgsId);  
+                  if (rresult !== null && rresult.total >= 1) { 
+                    otherhiden ="1"
+                    sendMsg = "每筆書目於前台僅能顯示一則推薦資訊。確定要改為顯示此內容，並隱藏原有的推薦嗎？隱藏的項目可隨時於列表中再次設定顯示。";
+                  }
+                }
+                if (confirm(sendMsg)) { 
                   let isshow = (record.isshow === 1) ? "0" : "1"  ;
-                  record.isshow = isshow;  
-                  const hide = message.loading("正在配置");
-                  try {
+                  record.isshow = isshow;   
+                  record.otherhiden = otherhiden;
+                  try { 
                       const result = await addSDGsBooks(record); 
                       hide();
     
@@ -241,6 +252,10 @@ const SDGsBooks: React.FC<{}>  = () => {
                       hide();
                     } 
                   }
+                } catch (error) {
+                  message.success("修改失敗請重試！");
+                  hide();
+                } 
               }}
             >
             {record.isshow === 1 ? "隱藏" : "顯示" } 
@@ -259,7 +274,7 @@ const SDGsBooks: React.FC<{}>  = () => {
               修改
             </Button>
           </> )} 
-          {(record.insert_muser_id !== '' && record.insert_muser_id !== null && parseInt(record.insert_muser_id)===1) && (<>
+          {(record.insert_muser_id !== '' && record.insert_muser_id !== null && parseInt(record.insert_muser_id) !== 101) && (<>
             <Button
               type="default"
               danger

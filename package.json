@@ -15,14 +15,19 @@
     "@ant-design/plots": "^1.2.5",
     "@ant-design/pro-components": "^2.4.4",
     "@antv/data-set": "^0.11.8",
+    "@apollo/client": "^3.10.5",
     "@umijs/max": "^4.0.87",
     "antd": "^5.4.0",
     "antd-style": "^3.5.0",
+    "apollo-upload-client": "^17.0.0",
     "bizcharts": "^4.1.23",
+    "js-xlsx": "^0.8.22",
     "numeral": "^2.0.6",
-    "umi-request": "^1.4.0"
+    "umi-request": "^1.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/apollo-upload-client": "^17.0.5",
     "@types/react": "^18.0.33",
     "@types/react-dom": "^18.0.11",
     "husky": "^8.0.3",

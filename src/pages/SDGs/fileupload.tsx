@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { PageContainer } from '@ant-design/pro-layout';
 import UploadTab from '../../components/SDGs/UploadTab'; 
-import { SelectProps ,Progress , Spin,Row,Col, Divider,Upload, message ,Button,Select} from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
+import { SelectProps ,Progress , Spin,Row,Col, Divider,Upload, message ,Button,Select,Tooltip} from 'antd';
+import { InboxOutlined ,InfoCircleOutlined} from '@ant-design/icons';
 import { UploadMessageForm } from '../../components/SDGs'; 
 import { history } from "umi";
 const { Dragger } = Upload;
@@ -174,10 +174,14 @@ const FileUploadComponent = () => {
             <Col span="6">{'  '}</Col>
         </Row> <br />
         <Row gutter={[48, 24]}>
-            <Col span={6} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>前台是否顯示{" :"}</Col>
+            <Col span={6} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>前台是否顯示
+            <Tooltip title="每筆書目於前台僅能顯示一則推薦資訊。若選擇前台顯示，上傳後將顯示新增的內容，並自動隱藏原有的推薦。隱藏的項目可隨時於列表中再次設定顯示。">
+              <InfoCircleOutlined twoToneColor="#eb2f96" /></Tooltip>{" :"}
+            </Col>
             <Col span="12"> 
            <Select 
                 placeholder="選擇前台是否顯示"
+                defaultValue="0"
                 onChange={handleShowChange}
                 style={{ width: 200 }}
                 options={showOptions}
