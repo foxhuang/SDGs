@@ -85,7 +85,7 @@ const KeyWordEditForm: React.FC<{}> = (props: any) => {
     const onSubmit = async (values: SDGsItems) => {
         values.id = id; 
         values.sdgsId = sdgsId;
-        values.maincodeId = maincodeId;
+        values.maincodeId = 1;
         values.title = kwTitle;
         values.isshow = isshow;
         const hide = message.loading("正在配置");

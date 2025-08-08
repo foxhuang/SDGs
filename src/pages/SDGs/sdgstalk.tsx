@@ -1,47 +1,47 @@
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components'; 
-import request from 'umi-request'; 
+import { ProTable } from '@ant-design/pro-components';
+import request from 'umi-request';
 import React, { useEffect, useRef, useState } from "react";
-import {Tab, DetailForm } from '../../components/SDGs'; 
-import {  getSDGs,delSDGsItem,addSDGsItem } from "../service";
-import { DownOutlined,PlusOutlined,UploadOutlined } from '@ant-design/icons';
-import { Menu, Dropdown, Button,  Space, message,DatePicker } from "antd";
+import { Tab, DetailForm } from '../../components/SDGs';
+import { getSDGs, delSDGsItem, addSDGsItem } from "../service";
+import { DownOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Menu, Dropdown, Button, Space, message, DatePicker } from "antd";
 import { SDGsItems } from "./data";
 import { PageContainer } from '@ant-design/pro-layout';
-import ExportExcelButton from '../../components/SDGs/ExportExcelButton'; 
-import { ActionEditForm } from '../../components/SDGs'; 
+import ExportExcelButton from '../../components/SDGs/ExportExcelButton';
+import { ActionEditForm } from '../../components/SDGs';
 
 const { RangePicker } = DatePicker;
 
-const SDGsTalk: React.FC<{}>  = () => {
+const SDGsTalk: React.FC<{}> = () => {
   let querystring = window.location.search.replace('?', '');
   let params = querystring.split('&');
   let sdgsId = 0;
-  let maincodeId = 81002; 
- 
+  let maincodeId = 81002;
+
 
   params.map(param => {
     var q = param.split('=');
     if (q[0] === 'sdgsId') {
-        sdgsId = parseInt(q[1]);
-    }  
+      sdgsId = parseInt(q[1]);
+    }
   });
   const [id, setId] = useState<number>(0);
   const [detailModalVisible, handleDetailModalVisible] = useState<boolean>(
     false
-  ); 
+  );
   const [editModalVisible, handleEditModalVisible] = useState<boolean>(
     false
-  ); 
-  const actionRef = useRef<ActionType>(); 
-  const [tableData, setTableData] = useState({});  
+  );
+  const actionRef = useRef<ActionType>();
+  const [tableData, setTableData] = useState({});
   const excelHeaders = [
-    { title: '項目', key: 'title' , type: 'string', width: 80}, 
-    { title: '資料來源', key: 'source', type: 'string' , width: 15}, 
-    { title: '前台顯示', key: 'source', type: 'y&n0'},  
-    { title: '新增時間', key: 'insert_date', type: 'date', width: 20 }, 
+    { title: '項目', key: 'title', type: 'string', width: 80 },
+    { title: '資料來源', key: 'source', type: 'string', width: 15 },
+    { title: '前台顯示', key: 'source', type: 'y&n0' },
+    { title: '新增時間', key: 'insert_date', type: 'date', width: 20 },
   ];
-  
+
 
   const columns: ProColumns<SDGsItems>[] = [
     {
@@ -58,57 +58,57 @@ const SDGsTalk: React.FC<{}>  = () => {
       dataIndex: "id",
       hideInSearch: true,
       hideInForm: true,
-      hideInTable: true, 
+      hideInTable: true,
     },
     {
       title: '項目',
-      dataIndex: 'title', 
-      ellipsis: true,  
+      dataIndex: 'title',
+      ellipsis: true,
       width: 300,
-    }, 
-    { 
+    },
+    {
       title: '資料來源',
-      dataIndex: 'source', 
-      ellipsis: true,   
-    },   
-    
-    { 
+      dataIndex: 'source',
+      ellipsis: true,
+    },
+
+    {
       title: '前台顯示',
-      dataIndex: 'isshow', 
-      valueEnum: { 
+      dataIndex: 'isshow',
+      valueEnum: {
         '-1': {
-          text: '全部', 
+          text: '全部',
         },
         '0': {
-          text: '否', 
+          text: '否',
         },
         '1': {
-          text: '是',  
-        }, 
+          text: '是',
+        },
       },
-      ellipsis: true,   
-    }, 
+      ellipsis: true,
+    },
     {
-        title: '新增時間',
-        key: 'insertDate',
-        dataIndex: 'insert_date',
-        valueType: 'date',  
-        renderFormItem: () => <RangePicker format={"YYYY-MM-DD"}/>,
-    },   
+      title: '新增時間',
+      key: 'insertDate',
+      dataIndex: 'insert_date',
+      valueType: 'date',
+      renderFormItem: () => <RangePicker format={"YYYY-MM-DD"} />,
+    },
     {
       title: '修改時間',
       key: 'showTime',
       dataIndex: 'update_date',
-      valueType: 'date', 
+      valueType: 'date',
       hideInSearch: true,
-    },    
+    },
     {
       title: "操作",
       dataIndex: "option",
       valueType: "option",
       width: 300,
       render: (_, record: any) => {
-        return (<Space> 
+        return (<Space>
           <Button
             type="default"
             onClick={() => {
@@ -119,70 +119,70 @@ const SDGsTalk: React.FC<{}>  = () => {
             詳細
           </Button>
           <Button
-              type="default"
-              onClick={async () => {
-                if (confirm("確定要修改嗎？")) {
-                  let isshow = (record.isshow === 1) ? "0" : "1"  ;
-                  record.isshow = isshow;  
-                  const hide = message.loading("正在配置");
-                  try {
-                      const result = await addSDGsItem(record); 
+            type="default"
+            onClick={async () => {
+              if (confirm("確定要修改嗎？")) {
+                let isshow = (record.isshow === 1) ? "0" : "1";
+                record.isshow = isshow;
+                const hide = message.loading("正在配置");
+                try {
+                  const result = await addSDGsItem(record);
+                  hide();
+
+                  if (result !== null && result.success) {
+                    message.success("修改成功");
+                    if (actionRef.current) actionRef.current.reload();
+                  } else {
+                    message.success("修改失敗請重試！");
+                  }
+                } catch (error) {
+                  message.success("修改失敗請重試！");
+                  hide();
+                }
+              }
+            }}
+          >
+            {record.isshow === 1 ? "隱藏" : "顯示"}
+          </Button>
+          {(record.source === '本館') && (
+            <>
+              <Button
+                type="default"
+                onClick={() => {
+                  setId(record.id);
+                  handleEditModalVisible(true);
+                }}
+              >
+                修改
+              </Button>
+              <Button
+                type="default"
+                danger
+                onClick={async () => {
+                  if (confirm("確定刪除嗎？")) {
+                    const hide = message.loading("正在配置");
+                    try {
+                      const result = await delSDGsItem(record.id);
                       hide();
-    
+
                       if (result !== null && result.success) {
-                        message.success("修改成功");
+                        message.success("刪除成功");
                         if (actionRef.current) actionRef.current.reload();
                       } else {
-                        message.success("修改失敗請重試！");
+                        message.success("刪除失敗請重試！");
                       }
                     } catch (error) {
-                      message.success("修改失敗請重試！");
                       hide();
-                    } 
-                  }
-              }}
-            >
-            {record.isshow === 1 ? "隱藏" : "顯示" } 
-            </Button>
-          {(record.source==='本館') && (
-            <> 
-            <Button
-              type="default"
-              onClick={() => {
-                setId(record.id);
-                handleEditModalVisible(true);
-              }}
-            >
-              修改
-            </Button>
-            <Button
-              type="default"
-              danger
-              onClick={async () => {
-                if (confirm("確定刪除嗎？")) {
-                  const hide = message.loading("正在配置");
-                  try {
-                    const result = await delSDGsItem(record.id);
-                    hide();
-  
-                    if (result !== null && result.success) {
-                      message.success("刪除成功");
-                      if (actionRef.current) actionRef.current.reload();
-                    } else {
-                      message.success("刪除失敗請重試！");
                     }
-                  } catch (error) {
-                    hide();
+
                   }
-                  
-                }
-              }}
-            >
-              刪除
-            </Button>
-          </>
+                }}
+              >
+                刪除
+              </Button>
+            </>
           )}
-           
+
         </Space>);
       },
     },
@@ -191,20 +191,22 @@ const SDGsTalk: React.FC<{}>  = () => {
   const [breadcrumb, setData] = useState({});
 
   useEffect(() => {
-    setData({ items: [
+    setData({
+      items: [
         {
           title: 'SDGs 目標管理',
         },
-        { 
-            title: <a href="../sdgs/">SDGs 目標列表</a>, 
+        {
+          title: <a href="../sdgs/">SDGs 目標列表</a>,
         },
-        {  
-            title: "一起討論", 
+        {
+          title: "一起討論",
         },
-    ],});
+      ],
+    });
   }, []);
 
-  const [SDGsData, setSDGsData]  = useState({}); 
+  const [SDGsData, setSDGsData] = useState({});
   useEffect(() => {
     const fetchData = async () => {
       let data = await getSDGs();
@@ -212,11 +214,11 @@ const SDGsTalk: React.FC<{}>  = () => {
     };
     fetchData();
   }, []);
-  let title  = "SDG "+sdgsId+" ";
-  if(SDGsData!==undefined && SDGsData.data!==undefined && SDGsData.data.length>0 && sdgsId <= SDGsData.data.length  ){
-    title += SDGsData.data[sdgsId-1].title;
+  let title = "SDG " + sdgsId + " ";
+  if (SDGsData !== undefined && SDGsData.data !== undefined && SDGsData.data.length > 0 && sdgsId <= SDGsData.data.length) {
+    title += SDGsData.data[sdgsId - 1].title;
   }
-  const handleRefresh = () => { 
+  const handleRefresh = () => {
     setId(0);
     handleEditModalVisible(false);
     if (actionRef.current) actionRef.current.reload();
@@ -231,10 +233,10 @@ const SDGsTalk: React.FC<{}>  = () => {
 
   const menu = (
     <Menu>
-     <Menu.Item key="1">
-        <ExportExcelButton data={tableData} headers={excelHeaders}/> 
+      <Menu.Item key="1">
+        <ExportExcelButton data={tableData} headers={excelHeaders} />
       </Menu.Item>
-    
+
     </Menu>
   );
   /*
@@ -246,9 +248,9 @@ const SDGsTalk: React.FC<{}>  = () => {
   return (
     <PageContainer
       header={{
-      title: title, 
-      breadcrumb:  breadcrumb ,
-      }} 
+        title: title,
+        breadcrumb: breadcrumb,
+      }}
       extra={[(<>
         <Button
           type="primary"
@@ -258,97 +260,98 @@ const SDGsTalk: React.FC<{}>  = () => {
           }}
         >
           <PlusOutlined /> 新建
-        </Button>  
+        </Button>
         <Dropdown overlay={menu}>
           <Button>
             工具 <DownOutlined />
           </Button>
-        </Dropdown>  
+        </Dropdown>
       </>)]}
     >
-    <Tab 
-      sdgsId={sdgsId}  
-      match={{ url: '/sdgs', path: '/sdgstalk'  }}
-      location={{ pathname: 'sdgstalk' }}
-    >
-    <Space direction="vertical" size="middle" style={{ width: "100%" }}> 
-    <ProTable<SDGsItems>
-      columns={columns}
-      actionRef={actionRef}
-      cardBordered
-      request={(params) => {
-        return request<{
-          data: SDGsItems[];
-        }>('../../hysdgs/getSDGsItem', {
-          params,
-        }).then((response) => {
-          if (response.data !== undefined) {
-            setTableData(response.data);
-            return {
-              data: response.data,
-              muser: response.muser,
-              success: response.success,
-              total: response.total,
-            };
-          } else {
-            return {
-              data: [],
-              success: false,
-              total: 0,
-            };
-          }
-        });
-      }}
-       
-      editable={{
-        type: 'multiple',
-      }}
-       
-      rowKey="id"
-      params={{
-        sdgsId: sdgsId,
-        maincodeId:maincodeId, 
-      }}
-      search={{
-        labelWidth: 'auto',
-      }} 
-      options={{
-        setting: {
-          listsHeight: 400,
-        },
-      }} 
-      pagination={{ 
-        showSizeChanger: true,
-        onChange: (page) => console.log(page),
-      }}
-      dateFormatter="string"  
-    />
-    </Space>
-    {id !== 0 && ( <>
-    <DetailForm
-      title="一起討論"
-      label="討論項目"
-      stype = "talk"
-      onCancel={() => {
-        handleDetailModalVisible(false); 
-        setId(0);
-      }}
-      modalVisible={detailModalVisible}
-      id={id}
-    /></>)} 
-    </Tab>  
-    <ActionEditForm 
-      onCancel={() => {
-          handleEditModalVisible(false);   
+      <Tab
+        sdgsId={sdgsId}
+        match={{ url: '/sdgs', path: '/sdgstalk' }}
+        location={{ pathname: 'sdgstalk' }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <ProTable<SDGsItems>
+            columns={columns}
+            actionRef={actionRef}
+            cardBordered
+            request={(params) => {
+              return request<{
+                data: SDGsItems[];
+              }>('../../hysdgs/getSDGsItem', {
+                params,
+              }).then((response) => {
+                if (response.data !== undefined) {
+                  setTableData(response.data);
+                  return {
+                    data: response.data,
+                    muser: response.muser,
+                    success: response.success,
+                    total: response.total,
+                  };
+                } else {
+                  return {
+                    data: [],
+                    success: false,
+                    total: 0,
+                  };
+                }
+              });
+            }}
+
+            editable={{
+              type: 'multiple',
+            }}
+
+            rowKey="id"
+            params={{
+              sdgsId: sdgsId,
+              maincodeId: maincodeId,
+            }}
+            search={{
+              labelWidth: 'auto',
+            }}
+            options={{
+              setting: {
+                listsHeight: 400,
+              },
+            }}
+            pagination={{
+              showSizeChanger: true,
+              onChange: (page) => console.log(page),
+            }}
+            dateFormatter="string"
+          />
+        </Space>
+        {id !== 0 && (<>
+          <DetailForm
+            title="一起討論"
+            label="討論項目"
+            stype="talk"
+            onCancel={() => {
+              handleDetailModalVisible(false);
+              setId(0);
+            }}
+            modalVisible={detailModalVisible}
+            id={id}
+          /></>)}
+      </Tab>
+      <ActionEditForm
+        onCancel={() => {
+          handleEditModalVisible(false);
           setId(0);
-      }}  
-      sdgsId = {sdgsId}
-      maincodeId = {maincodeId}
-      editModalVisible={editModalVisible}  
-      id={id} 
-      handleRefresh={handleRefresh}
-      handleFinish={handleFinish}
-    />
-  </PageContainer>);
+        }}
+        sdgsId={sdgsId}
+        maincodeId={maincodeId}
+        editModalVisible={editModalVisible}
+        id={id}
+        stitle="討論"
+        handleRefresh={handleRefresh}
+        handleFinish={handleFinish}
+      />
+    </PageContainer>);
 };
 export default SDGsTalk;
